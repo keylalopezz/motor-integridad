@@ -1,0 +1,13 @@
+streamlit>=1.37
+supabase>=2.4
+pymongo[srv]>=4.6
+redis>=5.0
+cassandra-driver>=3.29
+pyasyncore; python_version >= "3.12"
+jsonschema>=4.21
+python-dotenv>=1.0
+bcrypt>=4.1
+cryptography>=42
+fpdf2>=2.7
+pandas>=2.0
+pytest>=8.0
