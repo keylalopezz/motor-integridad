@@ -5,6 +5,11 @@ from cassandra.auth import PlainTextAuthProvider
 from cassandra.query import dict_factory
 from .base import Adaptador
 
+
+def _q(identificador: str) -> str:
+    """Cita un identificador CQL (tabla o columna) para admitir nombres como _id y evitar inyeccion."""
+    return '"' + str(identificador).replace('"', '""') + '"'
+
 class CassandraAdapter(Adaptador):
     def __init__(self, config: Dict[str, Any] = None):
         if config is None: config = {}
@@ -118,26 +123,26 @@ class CassandraAdapter(Adaptador):
         permitidas = {item["nombre"] for item in self.listar_recursos()}
         if coleccion not in permitidas:
             raise ValueError("Tabla no encontrada en el keyspace configurado.")
-        return list(self.session.execute(f'SELECT * FROM "{coleccion}" LIMIT %s', (limite,)))
+        return list(self.session.execute(f'SELECT * FROM {_q(coleccion)} LIMIT %s', (limite,)))
 
     def existe(self, coleccion: str, campo: str, valor: Any) -> bool:
         # Cassandra requiere ALLOW FILTERING si no es partition key
-        query = f"SELECT * FROM {coleccion} WHERE {campo} = %s ALLOW FILTERING"
+        query = f"SELECT * FROM {_q(coleccion)} WHERE {_q(campo)} = %s LIMIT 1 ALLOW FILTERING"
         rows = self.session.execute(query, (valor,))
         return len(list(rows)) > 0
 
     def obtener(self, coleccion: str, filtro: Dict) -> List[Dict]:
         if not filtro:
-            query = f"SELECT * FROM {coleccion}"
+            query = f"SELECT * FROM {_q(coleccion)}"
             return list(self.session.execute(query))
             
-        campos = " AND ".join([f"{k} = %s" for k in filtro.keys()])
+        campos = " AND ".join([f"{_q(k)} = %s" for k in filtro.keys()])
         valores = tuple(filtro.values())
-        query = f"SELECT * FROM {coleccion} WHERE {campos} ALLOW FILTERING"
+        query = f"SELECT * FROM {_q(coleccion)} WHERE {campos} ALLOW FILTERING"
         return list(self.session.execute(query, valores))
 
     def contar_duplicados(self, coleccion: str, campo: str, valor: Any) -> int:
-        query = f"SELECT COUNT(*) as count FROM {coleccion} WHERE {campo} = %s ALLOW FILTERING"
+        query = f"SELECT COUNT(*) as count FROM {_q(coleccion)} WHERE {_q(campo)} = %s ALLOW FILTERING"
         rows = self.session.execute(query, (valor,))
         res = list(rows)
         return res[0]['count'] if res else 0
