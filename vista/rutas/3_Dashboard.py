@@ -19,7 +19,7 @@ motores_usados = [m.capitalize() for m in gestor.motores_configurados()]
 
 reglas = MotorReglas(usuario).obtener_reglas()
 
-# 1. KPIs Generales (Métricas solicitadas por el usuario)
+# 1. KPIs Generales
 st.subheader("📈 Métricas de Sistema")
 kpi1, kpi2, kpi3 = st.columns(3)
 
@@ -35,10 +35,9 @@ with kpi2:
 
 with kpi3:
     with st.container(border=True):
-        # Frecuencia de uso del sistema (estimado por la cantidad de eventos procesados)
-        eventos = len(violaciones) + len(reglas) * 15 # Estimación de actividad base
-        st.metric(label="Frecuencia de Uso del Sistema", value=f"{eventos} eventos")
-        st.caption("Operaciones y auditorías procesadas")
+        st.metric(label="Anomalías Detectadas", value=len(violaciones))
+        ultimo = max((v.get('detectado_en') or '' for v in violaciones), default='')
+        st.caption(f"Último escaneo con hallazgos: {ultimo[:16].replace('T', ' ')} UTC" if ultimo else "Sin anomalías registradas")
 
 st.divider()
 

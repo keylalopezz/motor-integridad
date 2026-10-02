@@ -25,7 +25,7 @@ with col2:
                 exito, msj = controlador.login(user_login, pass_login)
                 if exito:
                     st.session_state["logged_in"] = True
-                    st.session_state["usuario"] = user_login
+                    st.session_state["usuario"] = user_login.strip()
                     st.rerun()
                 else:
                     st.error(f"❌ {msj}")
@@ -34,8 +34,8 @@ with col2:
                     
     with tab2:
         st.markdown("### Crea tu Tenant")
-        user_reg = st.text_input("Nuevo Usuario (Tenant ID)")
-        pass_reg = st.text_input("Nueva Contraseña", type="password")
+        user_reg = st.text_input("Nuevo Usuario (Tenant ID)", help="3 a 30 caracteres: letras, números, guion o guion bajo.")
+        pass_reg = st.text_input("Nueva Contraseña", type="password", help="Mínimo 6 caracteres.")
         submit_reg = st.button("Registrarse", use_container_width=True)
         
         if submit_reg:

@@ -20,6 +20,7 @@ class RedisAdapter(Adaptador):
             host_limpio = host_limpio.split(":")[0]
             
         usar_ssl = "upstash.io" in host_limpio.lower()
+        self.host = host_limpio
         
         self.client = redis.Redis(
             host=host_limpio, 
@@ -48,6 +49,7 @@ class RedisAdapter(Adaptador):
             "motor": "Redis",
             "latencia_ms": latencia,
             "estado": "Disponible",
+            "host": self.host,
             "servidor": {},
             "memoria": {},
             "estadisticas": {},

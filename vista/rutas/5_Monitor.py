@@ -71,7 +71,7 @@ if resultado and resultado["motor"] == motor_monitor:
         with kpi3:
             version_srv = info.get("servidor", {}).get("version", "N/D")
             st.metric("Versión del Motor", f"v{version_srv}" if version_srv != "N/D" else "Activo")
-            target_name = info.get("database") or info.get("keyspace") or f"DB {info.get('servidor', {}).get('puerto', '')}"
+            target_name = info.get("database") or info.get("keyspace") or info.get("host") or "N/D"
             st.caption(f"Workspace: `{target_name}`")
             
         with kpi4:
@@ -84,6 +84,9 @@ if resultado and resultado["motor"] == motor_monitor:
                 num_recursos = len(info.get("recursos", []))
                 st.metric("Namespaces / Prefijos", f"{num_recursos}")
                 mem_usada = info.get("memoria", {}).get("usada_humana", "N/D")
+                # Proveedores serverless como Upstash no reportan la memoria real (devuelven 0B)
+                if str(mem_usada).replace(".", "").replace("0", "") in ("B", ""):
+                    mem_usada = "no reportada por el proveedor"
                 st.caption(f"Memoria RAM: {mem_usada}")
             else:
                 num_recursos = len(info.get("tablas", []))

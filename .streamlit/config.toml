@@ -5,3 +5,7 @@ backgroundColor = "#0e101c"
 secondaryBackgroundColor = "#1e293b"
 textColor = "#e2e8f0"
 font = "sans serif"
+
+[client]
+# Oculta el menu de desarrollador (Deploy, Rerun, Settings) a los visitantes
+toolbarMode = "minimal"
