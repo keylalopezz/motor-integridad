@@ -11,11 +11,11 @@ class Autenticacion:
 
     def registrar_usuario(self, usuario: str, password: str) -> Tuple[bool, str]:
         if not self.supabase:
-            return False, "Error de conexion a Supabase."
+            return False, "Error de conexión a Supabase."
 
         usuario = (usuario or "").strip()
         if not USUARIO_VALIDO.fullmatch(usuario):
-            return False, "El usuario debe tener de 3 a 30 caracteres: letras, numeros, guion o guion bajo, sin espacios."
+            return False, "El usuario debe tener de 3 a 30 caracteres: letras, números, guion o guion bajo, sin espacios."
         if len(password or "") < 6:
             return False, "La contraseña debe tener al menos 6 caracteres."
 
@@ -38,14 +38,14 @@ class Autenticacion:
 
     def verificar_login(self, usuario: str, password: str) -> Tuple[bool, str]:
         if not self.supabase:
-            return False, "Error de conexion a Supabase."
+            return False, "Error de conexión a Supabase."
 
         usuario = (usuario or "").strip()
         try:
             res = self.supabase.table('usuarios_sistema').select('password_hash').eq('usuario', usuario).execute()
         except Exception as e:
             print(f"Error al verificar login: {e}")
-            return False, "No se pudo conectar con el servidor de autenticacion. Intenta de nuevo en unos minutos."
+            return False, "No se pudo conectar con el servidor de autenticación. Intenta de nuevo en unos minutos."
         if not res.data:
             return False, "Usuario o contraseña incorrectos."
 
