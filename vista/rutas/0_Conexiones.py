@@ -107,10 +107,10 @@ else:
 
                 if redis_host:
                     botones("redis", RedisAdapter, {
-                        "REDIS_HOST": redis_host,
+                        "REDIS_HOST": redis_host.strip(),
                         "REDIS_PORT": int(redis_port) if redis_port.isdigit() else 6379,
                         "REDIS_DB": int(redis_db) if redis_db.isdigit() else 0,
-                        "REDIS_PASSWORD": redis_password if redis_password else None
+                        "REDIS_PASSWORD": redis_password.strip() if redis_password.strip() else None
                     })
                 else:
                     st.caption("Completa al menos el Host.")
@@ -140,10 +140,10 @@ else:
                     client_secret = st.text_input("Client Secret", value=config_cass.get("CASSANDRA_CLIENT_SECRET", ""), type="password")
                     bundle_b64 = base64.b64encode(bundle.getvalue()).decode("utf-8") if bundle else config_cass.get("CASSANDRA_BUNDLE_B64")
                     config = {
-                        "CASSANDRA_KEYSPACE": keyspace,
+                        "CASSANDRA_KEYSPACE": keyspace.strip(),
                         "CASSANDRA_BUNDLE_B64": bundle_b64,
-                        "CASSANDRA_CLIENT_ID": client_id,
-                        "CASSANDRA_CLIENT_SECRET": client_secret,
+                        "CASSANDRA_CLIENT_ID": client_id.strip(),
+                        "CASSANDRA_CLIENT_SECRET": client_secret.strip(),
                     }
                     completo = keyspace and bundle_b64 and client_id and client_secret
                 else:
@@ -152,7 +152,7 @@ else:
                     user = st.text_input("Usuario (opcional)", value=config_cass.get("CASSANDRA_USER", ""))
                     password = st.text_input("Password (opcional)", value=config_cass.get("CASSANDRA_PASSWORD", ""), type="password")
                     config = {
-                        "CASSANDRA_KEYSPACE": keyspace,
+                        "CASSANDRA_KEYSPACE": keyspace.strip(),
                         "CASSANDRA_HOST": host,
                         "CASSANDRA_PORT": int(port) if port.isdigit() else 9042,
                         "CASSANDRA_USER": user,
