@@ -12,6 +12,10 @@ st.markdown("Define las restricciones estructurales, referenciales y de unicidad
 usuario = st.session_state.get("usuario")
 controlador = ControladorReglas(usuario)
 
+# Los mensajes se guardan en sesion para que sobrevivan al st.rerun()
+if "reglas_aviso" in st.session_state:
+    st.success(st.session_state.pop("reglas_aviso"))
+
 tab1, tab2 = st.tabs(["📋 Reglas Activas", "➕ Crear Nueva Regla"])
 
 with tab1:
@@ -29,6 +33,7 @@ with tab1:
                     
                     if st.button("🗑️ Eliminar", key=f"del_{r['id']}"):
                         controlador.eliminar_regla(r['id'])
+                        st.session_state["reglas_aviso"] = "🗑️ Regla eliminada."
                         st.rerun()
         else:
             st.info("💡 No hay reglas definidas en este workspace.")
@@ -89,9 +94,17 @@ with tab2:
                 "campo_destino": campo_destino if campo_destino else None,
                 "schema": schema if tipo == "esquema" else None
             }
+            campos_clave = ["tipo", "motor_origen", "coleccion_origen", "campo", "motor_destino", "coleccion_destino", "campo_destino"]
             try:
-                controlador.crear_regla(nueva_regla)
-                st.success("✅ Política implementada exitosamente.")
-                st.rerun()
+                duplicada = any(
+                    all(r.get(k) == nueva_regla[k] for k in campos_clave) and (tipo != "esquema" or r.get("schema") == schema)
+                    for r in controlador.obtener_reglas()
+                )
+                if duplicada:
+                    st.warning("⚠️ Ya existe una regla idéntica. No se guardó de nuevo.")
+                else:
+                    controlador.crear_regla(nueva_regla)
+                    st.session_state["reglas_aviso"] = f"✅ Política de {tipo} guardada sobre {motor_origen}.{coleccion_origen}."
+                    st.rerun()
             except Exception as e:
                 st.error(f"❌ Error: {e}")
