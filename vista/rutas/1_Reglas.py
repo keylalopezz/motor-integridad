@@ -74,7 +74,7 @@ with tab2:
         if tipo == "consistencia":
             st.caption("ℹ️ Consistencia: los registros enlazados por *campo* ↔ *campo de cruce* deben existir en ambos motores y coincidir en los atributos que comparten.")
 
-        if st.button("Guardar Política", type="primary", use_container_width=True):
+        if st.button("Guardar Política", type="primary", width="stretch"):
             faltantes = [nombre for nombre, valor in [("Colección / Tabla", coleccion_origen), ("Campo a evaluar", campo)] if not valor]
             if tipo in ["referencial", "consistencia"]:
                 faltantes += [nombre for nombre, valor in [("Colección Destino", coleccion_destino), ("Campo de cruce", campo_destino)] if not valor]

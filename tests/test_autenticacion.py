@@ -47,3 +47,34 @@ def test_guion_bajo_se_escapa_en_la_busqueda():
     auth, tabla = crear_auth()
     auth.registrar_usuario("user_1", "secreto1")
     tabla.select.return_value.ilike.assert_called_with("usuario", r"user\_1")
+
+
+def crear_auth_login(filas):
+    supabase = MagicMock()
+    tabla = supabase.table.return_value
+    tabla.select.return_value.ilike.return_value.execute.return_value.data = filas
+    with patch.object(mod, "SupabaseClient") as sc:
+        sc.return_value.get_client.return_value = supabase
+        return mod.Autenticacion(), tabla
+
+
+def _hash(password):
+    return mod.bcrypt.hashpw(password.encode(), mod.bcrypt.gensalt(4)).decode()
+
+
+def test_login_sin_distinguir_mayusculas_devuelve_nombre_registrado():
+    auth, tabla = crear_auth_login([{"usuario": "Keyla", "password_hash": _hash("secreto1")}])
+    assert auth.verificar_login("keyla", "secreto1") == (True, "Login exitoso.", "Keyla")
+    tabla.select.return_value.ilike.assert_called_with("usuario", "keyla")
+
+
+def test_login_rechaza_password_incorrecta():
+    auth, _ = crear_auth_login([{"usuario": "Keyla", "password_hash": _hash("secreto1")}])
+    ok, _, usuario = auth.verificar_login("Keyla", "otra")
+    assert not ok and usuario is None
+
+
+def test_login_no_acepta_comodines():
+    auth, tabla = crear_auth_login([{"usuario": "Keyla", "password_hash": _hash("secreto1")}])
+    assert not auth.verificar_login("%", "secreto1")[0]
+    tabla.select.assert_not_called()

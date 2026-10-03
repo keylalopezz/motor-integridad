@@ -11,6 +11,11 @@ def _clave(valor: Any) -> str:
     return json.dumps(valor, sort_keys=True, default=str)
 
 
+def _tiene_valor(registro: Dict, campo: str) -> bool:
+    """Cassandra devuelve todas las columnas aunque esten vacias (None): un campo nulo no cuenta como valor."""
+    return registro.get(campo) is not None
+
+
 class VerificadorBatch:
     def __init__(self, usuario: str):
         self.usuario = usuario
@@ -82,13 +87,13 @@ class VerificadorBatch:
 
         registros_origen = self._adaptador(motor_origen).obtener_todos(regla['coleccion_origen'])
         registros_destino = self._adaptador(motor_destino).obtener_todos(regla['coleccion_destino'])
-        existentes = {_clave(r[campo_destino]) for r in registros_destino if campo_destino in r}
+        existentes = {_clave(r[campo_destino]) for r in registros_destino if _tiene_valor(r, campo_destino)}
 
         motores = f"{motor_origen},{motor_destino}"
         return [
             self._violacion(regla, motores, registro)
             for registro in registros_origen
-            if campo_origen in registro and _clave(registro[campo_origen]) not in existentes
+            if _tiene_valor(registro, campo_origen) and _clave(registro[campo_origen]) not in existentes
         ]
 
     def _verificar_consistencia(self, regla: Dict) -> List[Dict]:
@@ -103,13 +108,13 @@ class VerificadorBatch:
 
         registros_origen = self._adaptador(motor_origen).obtener_todos(regla['coleccion_origen'])
         registros_destino = self._adaptador(motor_destino).obtener_todos(regla['coleccion_destino'])
-        indice_destino = {_clave(r[campo_destino]): r for r in registros_destino if campo_destino in r}
+        indice_destino = {_clave(r[campo_destino]): r for r in registros_destino if _tiene_valor(r, campo_destino)}
 
         motores = f"{motor_origen},{motor_destino}"
         ignorar = {'_id', campo_origen, campo_destino}
         violaciones = []
         for registro in registros_origen:
-            if campo_origen not in registro:
+            if not _tiene_valor(registro, campo_origen):
                 continue
             valor = registro[campo_origen]
             replica = indice_destino.get(_clave(valor))
@@ -160,7 +165,7 @@ class VerificadorBatch:
 
         valores_vistos: Dict[str, List[Dict]] = {}
         for registro in self._adaptador(motor_origen).obtener_todos(coleccion_origen):
-            if campo in registro:
+            if _tiene_valor(registro, campo):
                 valores_vistos.setdefault(_clave(registro[campo]), []).append(registro)
 
         return [

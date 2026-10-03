@@ -21,6 +21,15 @@ if configurados:
     st.caption("Conectados: " + " · ".join(f"🟢 {m}" for m in configurados))
 
 
+def conexion_guardada(motor: str) -> dict:
+    try:
+        return gestor.obtener_conexion(motor) or {}
+    except Exception as e:
+        st.warning(f"⚠️ No se pudo leer la conexión guardada de {motor.upper()} ({type(e).__name__}). "
+                   "Si cambió la ENCRYPTION_KEY, vuelve a introducir las credenciales y guárdalas.")
+        return {}
+
+
 def probar_y_guardar(motor: str, clase_adaptador, config: dict, probar_solo: bool):
     adapter = None
     try:
@@ -44,11 +53,11 @@ def probar_y_guardar(motor: str, clase_adaptador, config: dict, probar_solo: boo
 
 def botones(motor: str, clase_adaptador, config: dict):
     b1, b2 = st.columns(2)
-    if b1.button("🔌 Probar conexión", use_container_width=True, key=f"probar_{motor}"):
+    if b1.button("🔌 Probar conexión", width="stretch", key=f"probar_{motor}"):
         probar_y_guardar(motor, clase_adaptador, config, probar_solo=True)
-    if b2.button(f"💾 Probar y guardar", type="primary", use_container_width=True, key=f"guardar_{motor}"):
+    if b2.button(f"💾 Probar y guardar", type="primary", width="stretch", key=f"guardar_{motor}"):
         probar_y_guardar(motor, clase_adaptador, config, probar_solo=False)
-    if motor in configurados and st.button("🗑️ Eliminar conexión guardada", use_container_width=True, key=f"borrar_{motor}"):
+    if motor in configurados and st.button("🗑️ Eliminar conexión guardada", width="stretch", key=f"borrar_{motor}"):
         gestor.eliminar_conexion(motor)
         st.rerun()
 
@@ -78,7 +87,7 @@ else:
                     5. Pégala abajo y **reemplaza `<password>`** por tu contraseña real.
                     """)
 
-                config_mongo = gestor.obtener_conexion("mongodb") or {}
+                config_mongo = conexion_guardada("mongodb")
                 mongo_uri = st.text_input("URI de Conexión", value=config_mongo.get("MONGO_URI", ""), placeholder="mongodb+srv://...", type="password")
                 mongo_db = st.text_input("Database Name", value=config_mongo.get("MONGO_DB", ""), placeholder="my_database")
 
@@ -99,7 +108,7 @@ else:
                     4. El **Puerto** siempre son los números al final del endpoint (ej. `32512`).
                     """)
 
-                config_redis = gestor.obtener_conexion("redis") or {}
+                config_redis = conexion_guardada("redis")
                 redis_host = st.text_input("Host", value=config_redis.get("REDIS_HOST", ""), placeholder="us1-redis.upstash.io")
                 redis_port = st.text_input("Puerto", value=str(config_redis.get("REDIS_PORT", "6379")))
                 redis_db = st.text_input("DB Index", value=str(config_redis.get("REDIS_DB", "0")))
@@ -128,7 +137,7 @@ else:
                        (si solo tienes el token `AstraCS:...`, usa `token` como Client ID y el token como Secret).
                     """)
 
-                config_cass = gestor.obtener_conexion("cassandra") or {}
+                config_cass = conexion_guardada("cassandra")
                 modo = st.radio("Tipo de clúster", ["Astra DB (Secure Bundle)", "Host propio"], horizontal=True)
                 keyspace = st.text_input("Keyspace", value=config_cass.get("CASSANDRA_KEYSPACE", ""))
 

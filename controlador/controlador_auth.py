@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Optional, Tuple
 import sys
 import os
 
@@ -12,7 +12,7 @@ class ControladorAuth:
     def registrar(self, usuario: str, password: str) -> Tuple[bool, str]:
         return self.auth.registrar_usuario(usuario, password)
 
-    def login(self, usuario: str, password: str) -> Tuple[bool, str]:
+    def login(self, usuario: str, password: str) -> Tuple[bool, str, Optional[str]]:
         return self.auth.verificar_login(usuario, password)
 
     def actualizar_actividad(self, usuario: str):

@@ -21,7 +21,7 @@ with col1:
         coleccion = st.text_input("Colección")
         registro_str = st.text_area("Payload (JSON)", value='{\n  "id": 1,\n  "nombre": "Test"\n}', height=150)
         
-        if st.button("Ejecutar Validación", use_container_width=True):
+        if st.button("Ejecutar Validación", width="stretch"):
             if not coleccion:
                 st.warning("Indica la colección a validar.")
                 st.stop()
@@ -44,7 +44,7 @@ with col2:
         
         st.info("Dependiendo del volumen de datos en la nube, esto puede tomar unos segundos.")
         
-        if st.button("Iniciar Escaneo Profundo", type="primary", use_container_width=True):
+        if st.button("Iniciar Escaneo Profundo", type="primary", width="stretch"):
             with st.spinner("Conectando con motores y escaneando datos..."):
                 try:
                     violaciones, errores = controlador.ejecutar_verificacion_batch()

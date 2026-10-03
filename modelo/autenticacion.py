@@ -1,4 +1,5 @@
 import re
+from datetime import datetime, timezone, timedelta
 import bcrypt
 from typing import Dict, Tuple, Optional
 from .supabase_client import SupabaseClient
@@ -36,32 +37,35 @@ class Autenticacion:
             print(f"Error al registrar usuario: {e}")
             return False, "No se pudo registrar el usuario. Intenta de nuevo en unos minutos."
 
-    def verificar_login(self, usuario: str, password: str) -> Tuple[bool, str]:
+    def verificar_login(self, usuario: str, password: str) -> Tuple[bool, str, Optional[str]]:
+        """Devuelve (exito, mensaje, usuario tal como esta registrado). El nombre no distingue mayusculas."""
         if not self.supabase:
-            return False, "Error de conexión a Supabase."
+            return False, "Error de conexión a Supabase.", None
 
         usuario = (usuario or "").strip()
+        # Validar antes de usar ilike: el patron no admite comodines como "%"
+        if not USUARIO_VALIDO.fullmatch(usuario):
+            return False, "Usuario o contraseña incorrectos.", None
         try:
-            res = self.supabase.table('usuarios_sistema').select('password_hash').eq('usuario', usuario).execute()
+            res = self.supabase.table('usuarios_sistema').select('usuario, password_hash').ilike('usuario', usuario.replace('_', r'\_')).execute()
         except Exception as e:
             print(f"Error al verificar login: {e}")
-            return False, "No se pudo conectar con el servidor de autenticación. Intenta de nuevo en unos minutos."
-        if not res.data:
-            return False, "Usuario o contraseña incorrectos."
+            return False, "No se pudo conectar con el servidor de autenticación. Intenta de nuevo en unos minutos.", None
 
-        stored_hash = res.data[0]['password_hash']
-
-        if bcrypt.checkpw(password.encode('utf-8'), stored_hash.encode('utf-8')):
-            self.actualizar_actividad(usuario)
-            return True, "Login exitoso."
-        else:
-            return False, "Usuario o contraseña incorrectos."
+        # Cuentas antiguas pueden diferir solo en mayusculas: se prueba primero la coincidencia exacta
+        candidatos = sorted(res.data or [], key=lambda r: r['usuario'] != usuario)
+        for fila in candidatos:
+            if bcrypt.checkpw(password.encode('utf-8'), fila['password_hash'].encode('utf-8')):
+                self.actualizar_actividad(fila['usuario'])
+                return True, "Login exitoso.", fila['usuario']
+        return False, "Usuario o contraseña incorrectos.", None
 
     def actualizar_actividad(self, usuario: str):
         if self.supabase:
             try:
-                self.supabase.table('usuarios_sistema').update({'ultimo_acceso': 'now()'}).eq('usuario', usuario).execute()
-            except:
+                ahora = datetime.now(timezone.utc).isoformat()
+                self.supabase.table('usuarios_sistema').update({'ultimo_acceso': ahora}).eq('usuario', usuario).execute()
+            except Exception:
                 pass
 
     def obtener_usuarios_activos(self, minutos: int = 5) -> list:
@@ -72,7 +76,6 @@ class Autenticacion:
             # Una forma simple es traer todos (si son pocos) o usar un query.
             # Para evitar logica compleja de datetime en string, traemos y filtramos en python por simplicidad
             res = self.supabase.table('usuarios_sistema').select('usuario, ultimo_acceso').execute()
-            from datetime import datetime, timezone, timedelta
             activos = []
             ahora = datetime.now(timezone.utc)
             for r in res.data:

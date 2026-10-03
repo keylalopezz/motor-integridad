@@ -68,6 +68,13 @@ streamlit run vista/app.py
 pytest
 ```
 
+### 5. Verificar conexiones
+
+```bash
+python verificar_conexiones.py            # Supabase, ENCRYPTION_KEY y motores con credenciales en .env
+python verificar_conexiones.py <usuario>  # motores que ese usuario guardó en la app
+```
+
 ## Despliegue en Streamlit Community Cloud
 
 1. Sube el proyecto a un repositorio de GitHub (el `.gitignore` excluye `.env`).

@@ -90,3 +90,23 @@ def test_error_de_motor_se_reporta_y_no_borra_historial():
     res, errores, auditoria = ejecutar([r])
     assert res == [] and len(errores) == 1
     auditoria.limpiar_regla.assert_not_called()
+
+
+def test_campos_nulos_no_cuentan_como_duplicados_ni_huerfanos():
+    # Cassandra devuelve todas las columnas, con None en las vacias
+    pagos = [
+        {"id": "PA1", "transaccion": None, "pedido_id": None},
+        {"id": "PA2", "transaccion": None, "pedido_id": None},
+        {"id": "PA3", "transaccion": "TX1", "pedido_id": "P100"},
+    ]
+    MOTORES["cassandra"] = AdaptadorFalso({"pagos": pagos})
+    try:
+        reglas = [
+            regla("unicidad", motor_origen="cassandra", coleccion_origen="pagos", campo="transaccion"),
+            regla("referencial", motor_origen="cassandra", coleccion_origen="pagos", campo="pedido_id",
+                  motor_destino="mongodb", coleccion_destino="pedidos", campo_destino="_id"),
+        ]
+        res, errores, _ = ejecutar(reglas)
+    finally:
+        del MOTORES["cassandra"]
+    assert errores == [] and res == []

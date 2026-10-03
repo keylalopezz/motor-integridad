@@ -26,7 +26,7 @@ class Validador:
             
             elif regla['tipo'] == 'unicidad':
                 campo = regla.get('campo')
-                if campo and campo in registro:
+                if campo and registro.get(campo) is not None:
                     valor = registro[campo]
                     adaptador = get_adapter(motor, self.usuario)
                     try:

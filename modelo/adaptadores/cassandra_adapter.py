@@ -120,18 +120,30 @@ class CassandraAdapter(Adaptador):
 
     def obtener_muestra(self, coleccion: str, limite: int = 20) -> List[Dict[str, Any]]:
         # El identificador procede de system_schema, no de entrada libre del usuario.
+        coleccion = self._tabla(coleccion)
         permitidas = {item["nombre"] for item in self.listar_recursos()}
         if coleccion not in permitidas:
             raise ValueError("Tabla no encontrada en el keyspace configurado.")
         return list(self.session.execute(f'SELECT * FROM {_q(coleccion)} LIMIT %s', (limite,)))
 
+    def _tabla(self, coleccion: str) -> str:
+        """Nombre real de la tabla. CQL guarda en minusculas los nombres creados sin comillas,
+        asi que "Pagos" debe resolver a la tabla pagos."""
+        if coleccion != coleccion.lower():
+            existentes = {item["nombre"] for item in self.listar_recursos()}
+            if coleccion not in existentes and coleccion.lower() in existentes:
+                return coleccion.lower()
+        return coleccion
+
     def existe(self, coleccion: str, campo: str, valor: Any) -> bool:
         # Cassandra requiere ALLOW FILTERING si no es partition key
+        coleccion = self._tabla(coleccion)
         query = f"SELECT * FROM {_q(coleccion)} WHERE {_q(campo)} = %s LIMIT 1 ALLOW FILTERING"
         rows = self.session.execute(query, (valor,))
         return len(list(rows)) > 0
 
     def obtener(self, coleccion: str, filtro: Dict) -> List[Dict]:
+        coleccion = self._tabla(coleccion)
         if not filtro:
             query = f"SELECT * FROM {_q(coleccion)}"
             return list(self.session.execute(query))
@@ -142,6 +154,7 @@ class CassandraAdapter(Adaptador):
         return list(self.session.execute(query, valores))
 
     def contar_duplicados(self, coleccion: str, campo: str, valor: Any) -> int:
+        coleccion = self._tabla(coleccion)
         query = f"SELECT COUNT(*) as count FROM {_q(coleccion)} WHERE {_q(campo)} = %s ALLOW FILTERING"
         rows = self.session.execute(query, (valor,))
         res = list(rows)

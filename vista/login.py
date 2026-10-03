@@ -18,14 +18,14 @@ with col2:
         st.markdown("### Accede a tu Workspace")
         user_login = st.text_input("Usuario", placeholder="ej. admin_saas")
         pass_login = st.text_input("Contraseña", type="password", placeholder="••••••••")
-        submit_login = st.button("Ingresar al panel", use_container_width=True)
+        submit_login = st.button("Ingresar al panel", width="stretch")
         
         if submit_login:
             if user_login and pass_login:
-                exito, msj = controlador.login(user_login, pass_login)
+                exito, msj, usuario_registrado = controlador.login(user_login, pass_login)
                 if exito:
                     st.session_state["logged_in"] = True
-                    st.session_state["usuario"] = user_login.strip()
+                    st.session_state["usuario"] = usuario_registrado
                     st.rerun()
                 else:
                     st.error(f"❌ {msj}")
@@ -36,7 +36,7 @@ with col2:
         st.markdown("### Crea tu Tenant")
         user_reg = st.text_input("Nuevo Usuario (Tenant ID)", help="3 a 30 caracteres: letras, números, guion o guion bajo.")
         pass_reg = st.text_input("Nueva Contraseña", type="password", help="Mínimo 6 caracteres.")
-        submit_reg = st.button("Registrarse", use_container_width=True)
+        submit_reg = st.button("Registrarse", width="stretch")
         
         if submit_reg:
             if user_reg and pass_reg:

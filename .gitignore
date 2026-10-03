@@ -1,6 +1,7 @@
 # Secretos
 .env
 .streamlit/secrets.toml
+CREDENCIALES.txt
 
 # Python
 __pycache__/

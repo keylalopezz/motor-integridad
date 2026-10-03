@@ -11,13 +11,13 @@ st.title("📄 Reporte de Anomalías y Sugerencias")
 st.markdown("Revisa en detalle cada una de las violaciones detectadas por el sistema y descubre cómo corregirlas.")
 
 usuario = st.session_state.get("usuario")
-controlador = ControladorReporte(usuario)
-violaciones = controlador.obtener_violaciones()
-
-gestor = GestorConexiones(usuario)
-
-# Pequeño resumen de BDs escaneadas
-motores_conectados = gestor.motores_configurados()
+try:
+    violaciones = ControladorReporte(usuario).obtener_violaciones()
+    # Pequeño resumen de BDs escaneadas
+    motores_conectados = GestorConexiones(usuario).motores_configurados()
+except Exception as e:
+    st.error(f"❌ No se pudieron cargar los datos desde Supabase: {type(e).__name__}. Intenta recargar en unos segundos.")
+    st.stop()
 
 if motores_conectados:
     st.info(f"Bases de datos auditadas en tu último escaneo profundo: **{', '.join(motores_conectados).title()}**")
@@ -56,7 +56,7 @@ else:
         data=generar_pdf(violaciones),
         file_name='reporte_anomalias.pdf',
         mime='application/pdf',
-        use_container_width=True
+        width="stretch"
     )
     
     st.divider()
@@ -64,8 +64,8 @@ else:
     for idx, v in enumerate(violaciones):
         tipo = v.get('tipo', 'desconocido')
         motores = v.get('motores_involucrados', 'N/D')
-        dato = v.get('dato_afectado', {})
-        id_doc = dato.get('_id', 'Desconocido')
+        dato = v.get('dato_afectado') or {}
+        id_doc = dato.get('_id') or dato.get('id') or 'Desconocido'
         
         # Lógica de explicación y sugerencia
         if tipo == "esquema":

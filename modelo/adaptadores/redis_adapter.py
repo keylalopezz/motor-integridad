@@ -1,8 +1,16 @@
 import os
 import json
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import redis
 from .base import Adaptador
+
+# Nombre con el que se agrupan las claves sin ":" (no forman parte de ninguna coleccion)
+SIN_PREFIJO = "(sin prefijo)"
+
+
+def _prefijo(key: str) -> str:
+    return key.split(":", 1)[0] if ":" in key else SIN_PREFIJO
+
 
 class RedisAdapter(Adaptador):
     def __init__(self, config: Dict[str, Any] = None):
@@ -87,7 +95,7 @@ class RedisAdapter(Adaptador):
         try:
             for key in self.client.scan_iter(count=500):
                 total_escaneado += 1
-                prefijo = key.split(":", 1)[0] if ":" in key else "(sin prefijo)"
+                prefijo = _prefijo(key)
                 if prefijo not in prefijos:
                     prefijos[prefijo] = {"nombre": prefijo, "registros": 0, "tipos": set(), "muestra_claves": []}
                 prefijos[prefijo]["registros"] += 1
@@ -117,13 +125,19 @@ class RedisAdapter(Adaptador):
     def listar_recursos(self) -> List[Dict[str, Any]]:
         conteos = {}
         for key in self.client.scan_iter(count=500):
-            nombre = key.split(":", 1)[0]
+            nombre = _prefijo(key)
             conteos[nombre] = conteos.get(nombre, 0) + 1
         return [{"nombre": nombre, "registros": cantidad} for nombre, cantidad in sorted(conteos.items())]
 
+    def _claves(self, coleccion: str, count: int = 1000):
+        # Usar scan_iter para evitar bloquear el servidor con keys()
+        if coleccion == SIN_PREFIJO:
+            return (k for k in self.client.scan_iter(count=count) if ":" not in k)
+        return self.client.scan_iter(match=f"{coleccion}:*", count=count)
+
     def obtener_muestra(self, coleccion: str, limite: int = 20) -> List[Dict[str, Any]]:
         muestra = []
-        for key in self.client.scan_iter(match=f"{coleccion}:*", count=200):
+        for key in self._claves(coleccion, count=200):
             tipo = self.client.type(key)
             if tipo == "string":
                 data = self.client.get(key)
@@ -148,56 +162,36 @@ class RedisAdapter(Adaptador):
                 break
         return muestra
 
-    def _get_all_keys_in_collection(self, coleccion: str) -> List[str]:
-        # Usar scan_iter para evitar bloquear el servidor con keys()
-        return list(self.client.scan_iter(match=f"{coleccion}:*", count=1000))
+    def _leer_registro(self, key: str) -> Optional[Dict]:
+        """Un registro es un string con un objeto JSON o un hash. Las demas estructuras se ignoran."""
+        try:
+            obj = json.loads(self.client.get(key) or "null")
+        except redis.exceptions.ResponseError:
+            # WRONGTYPE: la clave no es un string
+            try:
+                return self.client.hgetall(key) if self.client.type(key) == "hash" else None
+            except redis.exceptions.ResponseError:
+                return None
+        except ValueError:
+            # El string no es JSON
+            return None
+        return obj if isinstance(obj, dict) else None
+
+    def _registros(self, coleccion: str):
+        for key in self._claves(coleccion):
+            obj = self._leer_registro(key)
+            if obj is not None:
+                yield obj
 
     def existe(self, coleccion: str, campo: str, valor: Any) -> bool:
-        keys = self._get_all_keys_in_collection(coleccion)
-        for key in keys:
-            data = self.client.get(key)
-            if data:
-                try:
-                    obj = json.loads(data)
-                    if obj.get(campo) == valor:
-                        return True
-                except:
-                    pass
-        return False
+        return any(obj.get(campo) == valor for obj in self._registros(coleccion))
 
     def obtener(self, coleccion: str, filtro: Dict) -> List[Dict]:
-        keys = self._get_all_keys_in_collection(coleccion)
-        res = []
-        for key in keys:
-            data = self.client.get(key)
-            if data:
-                try:
-                    obj = json.loads(data)
-                    # Comprobar si cumple el filtro
-                    match = True
-                    for k, v in filtro.items():
-                        if obj.get(k) != v:
-                            match = False
-                            break
-                    if match:
-                        res.append(obj)
-                except:
-                    pass
-        return res
+        return [obj for obj in self._registros(coleccion)
+                if all(obj.get(k) == v for k, v in filtro.items())]
 
     def contar_duplicados(self, coleccion: str, campo: str, valor: Any) -> int:
-        keys = self._get_all_keys_in_collection(coleccion)
-        count = 0
-        for key in keys:
-            data = self.client.get(key)
-            if data:
-                try:
-                    obj = json.loads(data)
-                    if obj.get(campo) == valor:
-                        count += 1
-                except:
-                    pass
-        return count
+        return sum(1 for obj in self._registros(coleccion) if obj.get(campo) == valor)
 
     def obtener_todos(self, coleccion: str) -> List[Dict]:
         return self.obtener(coleccion, {})

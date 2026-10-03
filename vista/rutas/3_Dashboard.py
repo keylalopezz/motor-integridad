@@ -11,13 +11,13 @@ st.title("📊 Dashboard General")
 st.markdown("Métricas clave de uso del Motor de Integridad y salud de tus clústeres.")
 
 usuario = st.session_state.get("usuario")
-controlador = ControladorReporte(usuario)
-violaciones = controlador.obtener_violaciones()
-
-gestor = GestorConexiones(usuario)
-motores_usados = [m.capitalize() for m in gestor.motores_configurados()]
-
-reglas = MotorReglas(usuario).obtener_reglas()
+try:
+    violaciones = ControladorReporte(usuario).obtener_violaciones()
+    motores_usados = [m.capitalize() for m in GestorConexiones(usuario).motores_configurados()]
+    reglas = MotorReglas(usuario).obtener_reglas()
+except Exception as e:
+    st.error(f"❌ No se pudieron cargar los datos desde Supabase: {type(e).__name__}. Intenta recargar en unos segundos.")
+    st.stop()
 
 # 1. KPIs Generales
 st.subheader("📈 Métricas de Sistema")

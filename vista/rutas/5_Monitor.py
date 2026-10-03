@@ -20,7 +20,7 @@ with col_sel1:
 with col_sel2:
     st.write("")
     st.write("")
-    btn_inspeccionar = st.button("🔄 Ejecutar Diagnóstico Completo", type="primary", use_container_width=True)
+    btn_inspeccionar = st.button("🔄 Ejecutar Diagnóstico Completo", type="primary", width="stretch")
 
 if btn_inspeccionar:
     adapter = None
@@ -128,7 +128,7 @@ if resultado and resultado["motor"] == motor_monitor:
                     if campos:
                         st.dataframe(
                             [{"Campo / Atributo": c["campo"], "Tipo de Dato Detectado": c["tipo"]} for c in campos],
-                            use_container_width=True,
+                            width="stretch",
                             hide_index=True
                         )
                     else:
@@ -139,7 +139,7 @@ if resultado and resultado["motor"] == motor_monitor:
                     if indices:
                         st.dataframe(
                             [{"Nombre de Índice": idx["nombre"], "Claves / Campos": idx["campos"], "Restricción Única": idx["unico"]} for idx in indices],
-                            use_container_width=True,
+                            width="stretch",
                             hide_index=True
                         )
                     else:
@@ -161,7 +161,7 @@ if resultado and resultado["motor"] == motor_monitor:
                         }
                         for r in recursos
                     ],
-                    use_container_width=True,
+                    width="stretch",
                     hide_index=True
                 )
 
@@ -181,7 +181,7 @@ if resultado and resultado["motor"] == motor_monitor:
                         st.markdown(f"#### 📐 Esquema de Columnas de `{tabla_sel}`")
                         st.dataframe(
                             [{"Columna": c["columna"], "Tipo CQL": c["tipo"], "Rol / Restricción": c["rol"]} for c in cols_cass],
-                            use_container_width=True,
+                            width="stretch",
                             hide_index=True
                         )
 
@@ -230,7 +230,7 @@ if resultado and resultado["motor"] == motor_monitor:
                     st.warning("La colección/tabla seleccionada no contiene registros actualmente.")
                 else:
                     if modo_vista == "Tabla":
-                        st.dataframe(registros, use_container_width=True, hide_index=True)
+                        st.dataframe(registros, width="stretch", hide_index=True)
                     else:
                         st.json(registros)
 
@@ -316,7 +316,7 @@ if resultado and resultado["motor"] == motor_monitor:
                         "Campo Destino": r.get("campo_destino") or "—",
                         "Fecha de Creación": r.get("creado_en", "")[:19]
                     })
-                st.dataframe(filas_reglas, use_container_width=True, hide_index=True)
+                st.dataframe(filas_reglas, width="stretch", hide_index=True)
             else:
                 st.info("No hay reglas de integridad configuradas actualmente para este motor.")
         except Exception as error:
