@@ -15,3 +15,9 @@ build/
 manual/diagramas/
 manual/diagramas.md
 plantuml.jar
+
+# Terraform
+infra/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfplan

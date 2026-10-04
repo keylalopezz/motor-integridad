@@ -1,0 +1,76 @@
+# Infraestructura como código con Terraform: valida, prueba y reporta costos en cada cambio.
+# El aprovisionamiento real (plan/apply) es manual: Actions → Run workflow → accion = plan | apply.
+name: Infraestructura (Terraform)
+
+on:
+  push:
+    branches: [main]
+    paths: ["infra/**", "scripts/reporte_infra.py", ".github/workflows/infraestructura.yml"]
+  workflow_dispatch:
+    inputs:
+      accion:
+        description: "Acción sobre la infraestructura real"
+        type: choice
+        options: [pruebas, plan, apply]
+        default: pruebas
+
+permissions:
+  contents: read
+
+jobs:
+  pruebas:
+    name: Validación, pruebas y costos
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+          terraform_wrapper: false
+      - run: terraform fmt -check -recursive
+      - run: terraform init -backend=false -input=false
+      - run: terraform validate
+      - name: Pruebas (terraform test)
+        run: terraform test -verbose -no-color 2>&1 | tee ../terraform_test.txt; exit ${PIPESTATUS[0]}
+        shell: bash
+      - name: Reportes de pruebas y costos
+        if: always()
+        working-directory: .
+        run: python3 scripts/reporte_infra.py terraform_test.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reporte-infraestructura
+          path: build/infra
+
+  aprovisionar:
+    name: Terraform ${{ inputs.accion }}
+    needs: pruebas
+    if: github.event_name == 'workflow_dispatch' && inputs.accion != 'pruebas'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra
+    env:
+      TF_VAR_supabase_access_token: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      TF_VAR_supabase_org_id: ${{ secrets.SUPABASE_ORG_ID }}
+      TF_VAR_supabase_db_password: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      TF_VAR_atlas_public_key: ${{ secrets.ATLAS_PUBLIC_KEY }}
+      TF_VAR_atlas_private_key: ${{ secrets.ATLAS_PRIVATE_KEY }}
+      TF_VAR_atlas_org_id: ${{ secrets.ATLAS_ORG_ID }}
+      TF_VAR_mongo_password: ${{ secrets.MONGO_APP_PASSWORD }}
+      TF_VAR_upstash_email: ${{ secrets.UPSTASH_EMAIL }}
+      TF_VAR_upstash_api_key: ${{ secrets.UPSTASH_API_KEY }}
+      TF_VAR_astra_token: ${{ secrets.ASTRA_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+      - run: terraform init -input=false
+      - run: terraform plan -input=false -out=plan.tfplan
+      - if: inputs.accion == 'apply'
+        run: terraform apply -input=false plan.tfplan

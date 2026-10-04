@@ -1,0 +1,11 @@
+{
+  "tipo_cambio_pen": 3.75,
+  "servicios": [
+    {"servicio": "Supabase", "recurso": "supabase_project.control", "plan": "Free", "costo_usd": 0, "limite": "500 MB de base de datos, 50 000 usuarios activos", "plan_pago": "Pro", "costo_pago_usd": 25},
+    {"servicio": "MongoDB Atlas", "recurso": "mongodbatlas_cluster.principal", "plan": "M0 (compartido)", "costo_usd": 0, "limite": "512 MB de almacenamiento", "plan_pago": "Flex", "costo_pago_usd": 30},
+    {"servicio": "Upstash Redis", "recurso": "upstash_redis_database.cache", "plan": "Free", "costo_usd": 0, "limite": "256 MB, 500 000 comandos/mes", "plan_pago": "Pay as you go", "costo_pago_usd": 10},
+    {"servicio": "DataStax Astra DB", "recurso": "astra_database.cassandra", "plan": "Serverless Free", "costo_usd": 0, "limite": "Crédito mensual de USD 25", "plan_pago": "Pay as you go", "costo_pago_usd": 25},
+    {"servicio": "Streamlit Community Cloud", "recurso": "(fuera de Terraform)", "plan": "Community", "costo_usd": 0, "limite": "Apps públicas, 1 GB de RAM", "plan_pago": "Snowflake", "costo_pago_usd": 0},
+    {"servicio": "GitHub Actions y Pages", "recurso": "(fuera de Terraform)", "plan": "Repositorio público", "costo_usd": 0, "limite": "Minutos ilimitados en repos públicos", "plan_pago": "Team", "costo_pago_usd": 4}
+  ]
+}
