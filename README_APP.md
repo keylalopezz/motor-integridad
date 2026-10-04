@@ -83,6 +83,23 @@ python verificar_conexiones.py <usuario>  # motores que ese usuario guardó en l
 4. En **Secrets** pega el contenido de `.streamlit/secrets.toml.example` con tus valores reales.
 5. Deploy. Las bases MongoDB Atlas / Upstash / Astra deben aceptar conexiones desde cualquier IP (`0.0.0.0/0`).
 
+## Documentación y automatización
+
+Cada *push* a `main` dispara dos automatizaciones:
+
+1. **Streamlit Community Cloud** redespliega la aplicación en <https://motor-integridad.streamlit.app/>.
+2. **GitHub Actions** (`.github/workflows/documentacion.yml`) ejecuta las pruebas y genera desde el repositorio:
+   - los diagramas UML del SRS y del SAD a partir de sus fuentes PlantUML (`docs/diagramas/*.puml`);
+   - los diagramas de clases y paquetes extraídos del código con pyreverse;
+   - la referencia de la API de `modelo` y `controlador` con pdoc;
+   - el manual técnico y de usuario (`manual/`) con MkDocs.
+
+   El resultado se publica en GitHub Pages y queda descargable como artefacto `documentacion-tecnica`
+   en la pestaña **Actions**. Para generarlo en local: `python scripts/generar_documentacion.py`.
+
+Los informes del proyecto (Semana 1, FD01 Factibilidad, FD02 Visión, FD03 SRS y FD04 SAD) están en
+`docs/informes/` en formato Word y PDF.
+
 ## Uso del Sistema
 
 1. **Autenticación**: Inicia sesión en la aplicación web.
@@ -100,6 +117,11 @@ motor-integridad/
 ├── supabase_schema.sql # Esquema SQL para inicializar Supabase
 ├── supabase_migracion_seguridad.sql # Activa RLS en proyectos existentes
 ├── tests/              # Pruebas unitarias (pytest)
+├── docs/informes/      # Informes FD01-FD04 y Semana 1 (Word y PDF)
+├── docs/diagramas/     # Fuentes PlantUML de los diagramas UML
+├── manual/             # Manual técnico y de usuario (MkDocs)
+├── scripts/            # Generación automática de la documentación
+├── .github/workflows/  # Pruebas y documentación en GitHub Actions
 ├── README.md           # Documentación del proyecto
 ├── modelo/             # Lógica de negocio, adaptadores y motor
 ├── controlador/        # Orquestadores entre Vista y Modelo
