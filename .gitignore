@@ -9,3 +9,9 @@ __pycache__/
 .venv/
 venv/
 .pytest_cache/
+
+# Documentación generada por CI (scripts/generar_documentacion.py)
+build/
+manual/diagramas/
+manual/diagramas.md
+plantuml.jar

@@ -1,0 +1,29 @@
+site_name: Motor de Integridad Multibase NoSQL
+site_description: Manual técnico y de usuario generado automáticamente desde el repositorio
+site_author: Keyla Noelia Lopez Ojeda y Adrian Fabricio Salas Acuña
+docs_dir: manual
+theme:
+  name: material
+  language: es
+  palette:
+    primary: deep purple
+    accent: amber
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+markdown_extensions:
+  - admonition
+  - tables
+  - toc:
+      permalink: true
+nav:
+  - Inicio: index.md
+  - Manual técnico:
+      - Arquitectura: arquitectura.md
+      - Instalación y configuración: instalacion.md
+      - Despliegue y automatización: despliegue.md
+      - Pruebas: pruebas.md
+  - Manual de usuario: usuario.md
+  - Diagramas: diagramas.md
+  - Referencia del código (API): api/index.html

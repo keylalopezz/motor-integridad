@@ -1,0 +1,79 @@
+# Integración continua del Motor de Integridad Multibase NoSQL.
+# En cada push a main: ejecuta las pruebas, genera los diagramas UML (desde el código y desde
+# docs/diagramas), la referencia de la API y el manual técnico, y los publica.
+# El despliegue de la aplicación lo realiza Streamlit Community Cloud con cada push a main.
+name: Pruebas y documentación técnica
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: documentacion
+  cancel-in-progress: true
+
+jobs:
+  documentacion:
+    name: Pruebas, diagramas y manuales
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: |
+          pip install -r requirements.txt
+          pip install -r requirements-docs.txt
+
+      - name: Pruebas unitarias
+        run: pytest -q
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Instalar Graphviz y PlantUML
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q graphviz
+          curl -sSL -o plantuml.jar https://github.com/plantuml/plantuml/releases/latest/download/plantuml.jar
+
+      - name: Generar diagramas, referencia de la API y manual técnico
+        env:
+          PLANTUML_JAR: ${{ github.workspace }}/plantuml.jar
+        run: python scripts/generar_documentacion.py
+
+      - name: Guardar la documentación como artefacto descargable
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentacion-tecnica
+          path: build/site
+
+      - name: Preparar la publicación en GitHub Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/site
+
+  publicar:
+    name: Publicar en GitHub Pages
+    needs: documentacion
+    runs-on: ubuntu-latest
+    # Si GitHub Pages no está habilitado en el repositorio, la documentación sigue disponible como artefacto
+    continue-on-error: true
+    environment:
+      name: github-pages
+      url: ${{ steps.despliegue.outputs.page_url }}
+    steps:
+      - id: despliegue
+        uses: actions/deploy-pages@v4

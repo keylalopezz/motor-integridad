@@ -1,0 +1,4 @@
+# Herramientas para generar la documentación técnica (solo CI, no las usa la aplicación)
+mkdocs-material>=9.5
+pdoc>=14.0
+pylint>=3.0
