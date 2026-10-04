@@ -49,7 +49,7 @@ def reporte_costos() -> str:
 
 def main() -> int:
     os.makedirs(SALIDA, exist_ok=True)
-    texto = open(sys.argv[1], encoding="utf-8").read() if len(sys.argv) > 1 else ""
+    texto = open(sys.argv[1], encoding="utf-8").read() if len(sys.argv) > 1 and os.path.exists(sys.argv[1]) else ""
     pruebas, costos = reporte_pruebas(texto), reporte_costos()
     for nombre, contenido in (("reporte_pruebas.md", pruebas), ("reporte_costos.md", costos)):
         with open(os.path.join(SALIDA, nombre), "w", encoding="utf-8") as f:

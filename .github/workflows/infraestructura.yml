@@ -30,12 +30,22 @@ jobs:
         with:
           terraform_version: "1.9.8"
           terraform_wrapper: false
-      - run: terraform fmt -check -recursive
-      - run: terraform init -backend=false -input=false
-      - run: terraform validate
-      - name: Pruebas (terraform test)
-        run: terraform test -verbose -no-color 2>&1 | tee ../terraform_test.txt; exit ${PIPESTATUS[0]}
+      - name: Formato, inicialización y validación
         shell: bash
+        run: |
+          paso() { salida=$("$@" 2>&1); c=$?; echo "$salida"; [ $c -eq 0 ] || { echo "::error title=$1 $2::$(echo "$salida" | tr '
+' ' ' | cut -c1-1500)"; exit $c; }; }
+          paso terraform fmt -check -recursive -diff -no-color
+          paso terraform init -backend=false -input=false -no-color
+          paso terraform validate -no-color
+      - name: Pruebas (terraform test)
+        shell: bash
+        run: |
+          terraform test -verbose -no-color > ../terraform_test.txt 2>&1; c=$?
+          cat ../terraform_test.txt
+          [ $c -eq 0 ] || echo "::error title=terraform test::$(grep -E 'Error|fail' -A3 ../terraform_test.txt | tr '
+' ' ' | cut -c1-1500)"
+          exit $c
       - name: Reportes de pruebas y costos
         if: always()
         working-directory: .

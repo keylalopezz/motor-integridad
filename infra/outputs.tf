@@ -1,6 +1,7 @@
 output "recursos" {
   description = "Resumen de la infraestructura aprovisionada"
-  value       = {
+
+  value = {
     supabase_proyecto = supabase_project.control.name
     mongodb_cluster   = mongodbatlas_cluster.principal.name
     mongodb_plan      = mongodbatlas_cluster.principal.provider_instance_size_name
