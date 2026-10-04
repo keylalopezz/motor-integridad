@@ -1,0 +1,37 @@
+# Estrategia de copias de seguridad: completa y semanal (domingo 06:00 UTC) o manual.
+# Respalda Supabase y los motores MongoDB, Redis y Cassandra, cifra el archivo y genera el reporte.
+# Retención: 30 días como artefacto del flujo.
+name: Copias de seguridad
+
+on:
+  schedule:
+    - cron: "0 6 * * 0"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  respaldo:
+    name: Respaldo y reporte
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Generar copia de seguridad
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+        run: python scripts/respaldo.py
+      - name: Guardar respaldo y reporte
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: respaldo-${{ github.run_number }}
+          path: build/respaldo
+          retention-days: 30
