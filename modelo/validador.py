@@ -1,14 +1,19 @@
+"""Validación previa a la escritura (simulador pre-escritura)."""
+
 from typing import Dict, Any, Tuple
 import jsonschema
 from .motor_reglas import MotorReglas
 from .adaptadores import get_adapter
 
 class Validador:
+    """Comprueba un registro contra las reglas de esquema y unicidad antes de escribirlo."""
     def __init__(self, usuario: str):
+        """Crea el validador para ``usuario``."""
         self.usuario = usuario
         self.motor_reglas = MotorReglas(usuario)
 
     def validar_registro(self, motor: str, coleccion: str, registro: Dict[str, Any]) -> Tuple[bool, str]:
+        """Valida ``registro`` para ``motor`` y ``coleccion``; devuelve ``(valido, mensaje)``."""
         filtros = {
             'motor_origen': motor,
             'coleccion_origen': coleccion

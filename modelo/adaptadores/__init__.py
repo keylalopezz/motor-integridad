@@ -1,3 +1,5 @@
+"""Adaptadores de los motores NoSQL y fábrica ``get_adapter``."""
+
 from .mongo_adapter import MongoAdapter
 from .redis_adapter import RedisAdapter
 from .cassandra_adapter import CassandraAdapter
@@ -7,6 +9,10 @@ MOTORES_SOPORTADOS = ['mongodb', 'redis', 'cassandra']
 
 
 def get_adapter(motor: str, usuario: str):
+    """Crea el adaptador del ``motor`` (mongodb, redis o cassandra) con las credenciales guardadas de ``usuario``.
+
+    Lanza ``ValueError`` si el motor no está soportado o no tiene conexión configurada.
+    """
     motor = motor.lower()
     if motor not in MOTORES_SOPORTADOS:
         raise ValueError(f"Motor no soportado: {motor}")

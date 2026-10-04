@@ -1,4 +1,5 @@
 -- Eliminar tablas antiguas (IMPORTANTE: Esto borrará los datos existentes para aplicar el nuevo esquema SaaS)
+drop table if exists eventos_uso cascade;
 drop table if exists auditoria_violaciones cascade;
 drop table if exists reglas cascade;
 drop table if exists conexiones_motores cascade;
@@ -58,3 +59,14 @@ alter table conexiones_motores enable row level security;
 
 create index if not exists idx_auditoria_usuario_regla on auditoria_violaciones (usuario, regla_id);
 create index if not exists idx_reglas_usuario on reglas (usuario);
+
+-- Eventos de uso del producto (dashboard de utilización). Gestionado también con Liquibase.
+create table if not exists eventos_uso (
+  id bigint generated always as identity primary key,
+  usuario text references usuarios_sistema(usuario) on delete cascade,
+  accion text not null,
+  detalle jsonb default '{}'::jsonb,
+  creado_en timestamptz default now()
+);
+alter table eventos_uso enable row level security;
+create index if not exists idx_eventos_uso_fecha on eventos_uso (creado_en);

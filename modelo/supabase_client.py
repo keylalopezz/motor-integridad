@@ -1,3 +1,5 @@
+"""Conexión única (singleton) con Supabase y lectura de configuración."""
+
 import os
 from dotenv import load_dotenv
 from supabase import create_client, Client
@@ -20,6 +22,7 @@ def obtener_config(nombre: str, defecto: str = "") -> str:
 
 
 class SupabaseClient:
+    """Singleton que crea el cliente de Supabase con ``SUPABASE_URL`` y ``SUPABASE_KEY``."""
     _instance = None
 
     def __new__(cls):
@@ -39,4 +42,5 @@ class SupabaseClient:
         return cls._instance
 
     def get_client(self) -> Client:
+        """Devuelve el cliente de Supabase o ``None`` si faltan credenciales."""
         return self.client

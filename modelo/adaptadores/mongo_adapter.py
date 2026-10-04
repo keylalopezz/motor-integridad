@@ -1,10 +1,14 @@
+"""Adaptador de MongoDB Atlas basado en ``pymongo``."""
+
 import os
 from typing import List, Dict, Any
 from pymongo import MongoClient
 from .base import Adaptador
 
 class MongoAdapter(Adaptador):
+    """Acceso a una base de MongoDB: colecciones como recursos y documentos como registros."""
     def __init__(self, config: Dict[str, Any] = None):
+        """Conecta con la URI y la base de datos indicadas en ``config``."""
         if config is None: config = {}
         uri = config.get("MONGO_URI", os.environ.get("MONGO_URI", "mongodb://localhost:27017/"))
         db_name = config.get("MONGO_DB", os.environ.get("MONGO_DB", "ecommerce_db"))
@@ -12,11 +16,13 @@ class MongoAdapter(Adaptador):
         self.db = self.client[db_name]
 
     def verificar_salud(self) -> Dict[str, Any]:
+        """Ejecuta ``ping`` y devuelve el estado y la latencia en milisegundos."""
         started = __import__('time').perf_counter()
         self.client.admin.command("ping")
         return {"estado": "Disponible", "latencia_ms": round((__import__('time').perf_counter() - started) * 1000, 2), "detalle": self.db.name}
 
     def obtener_info_completa(self) -> Dict[str, Any]:
+        """Devuelve versión, estadísticas del servidor, colecciones, índices y esquema inferido."""
         started = __import__('time').perf_counter()
         self.client.admin.command("ping")
         latencia = round((__import__('time').perf_counter() - started) * 1000, 2)
@@ -129,6 +135,7 @@ class MongoAdapter(Adaptador):
         return info
 
     def listar_recursos(self) -> List[Dict[str, Any]]:
+        """Lista las colecciones con su cantidad estimada de documentos."""
         recursos = []
         for name in sorted(self.db.list_collection_names()):
             try:
@@ -139,6 +146,7 @@ class MongoAdapter(Adaptador):
         return recursos
 
     def obtener_muestra(self, coleccion: str, limite: int = 20) -> List[Dict[str, Any]]:
+        """Devuelve hasta ``limite`` documentos de ``coleccion``."""
         res = []
         for doc in self.db[coleccion].find({}).limit(limite):
             if "_id" in doc:
@@ -147,10 +155,12 @@ class MongoAdapter(Adaptador):
         return res
 
     def existe(self, coleccion: str, campo: str, valor: Any) -> bool:
+        """Indica si algún documento de ``coleccion`` tiene ``campo`` igual a ``valor``."""
         col = self.db[coleccion]
         return col.count_documents({campo: valor}) > 0
 
     def obtener(self, coleccion: str, filtro: Dict) -> List[Dict]:
+        """Devuelve los documentos de ``coleccion`` que cumplen ``filtro``."""
         col = self.db[coleccion]
         # _id is typically an ObjectId which is not serializable easily.
         # For simplicity, if we need it, we convert to string
@@ -162,11 +172,14 @@ class MongoAdapter(Adaptador):
         return res
 
     def contar_duplicados(self, coleccion: str, campo: str, valor: Any) -> int:
+        """Cuenta los documentos de ``coleccion`` con ``campo`` igual a ``valor``."""
         col = self.db[coleccion]
         return col.count_documents({campo: valor})
 
     def obtener_todos(self, coleccion: str) -> List[Dict]:
+        """Devuelve todos los documentos de ``coleccion``."""
         return self.obtener(coleccion, {})
 
     def cerrar(self) -> None:
+        """Cierra el cliente de MongoDB."""
         self.client.close()

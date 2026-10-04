@@ -1,7 +1,10 @@
+"""Interfaz común que implementan los adaptadores de MongoDB, Redis y Cassandra."""
+
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any
 
 class Adaptador(ABC):
+    """Contrato abstracto de acceso a un motor NoSQL usado por el validador y el escaneo batch."""
     @abstractmethod
     def existe(self, coleccion: str, campo: str, valor: Any) -> bool:
         """Verifica si existe un registro con el campo y valor dados."""

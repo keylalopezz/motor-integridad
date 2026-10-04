@@ -1,3 +1,5 @@
+"""Adaptador de Redis (Upstash). Una colección es el prefijo de las claves (``usuarios:``)."""
+
 import os
 import json
 from typing import List, Dict, Any, Optional
@@ -9,11 +11,14 @@ SIN_PREFIJO = "(sin prefijo)"
 
 
 def _prefijo(key: str) -> str:
+    """Devuelve el prefijo de una clave (``usuarios:U001`` → ``usuarios``)."""
     return key.split(":", 1)[0] if ":" in key else SIN_PREFIJO
 
 
 class RedisAdapter(Adaptador):
+    """Acceso a Redis: lee registros guardados como JSON o como hash bajo un prefijo de clave."""
     def __init__(self, config: Dict[str, Any] = None):
+        """Conecta con el host, puerto y contraseña de ``config`` (TLS para Upstash)."""
         if config is None: config = {}
         host = config.get("REDIS_HOST", os.environ.get("REDIS_HOST", "localhost"))
         port = int(config.get("REDIS_PORT", os.environ.get("REDIS_PORT", 6379)))
@@ -42,12 +47,14 @@ class RedisAdapter(Adaptador):
         )
 
     def verificar_salud(self) -> Dict[str, Any]:
+        """Ejecuta ``PING`` y devuelve el estado y la latencia en milisegundos."""
         import time
         started = time.perf_counter()
         self.client.ping()
         return {"estado": "Disponible", "latencia_ms": round((time.perf_counter() - started) * 1000, 2), "detalle": f"DB {self.client.connection_pool.connection_kwargs.get('db', 0)}"}
 
     def obtener_info_completa(self) -> Dict[str, Any]:
+        """Devuelve versión, memoria, clientes, prefijos y una muestra de claves."""
         import time
         started = time.perf_counter()
         self.client.ping()
@@ -123,6 +130,7 @@ class RedisAdapter(Adaptador):
         return info
 
     def listar_recursos(self) -> List[Dict[str, Any]]:
+        """Lista los prefijos de clave con la cantidad de claves de cada uno."""
         conteos = {}
         for key in self.client.scan_iter(count=500):
             nombre = _prefijo(key)
@@ -131,11 +139,13 @@ class RedisAdapter(Adaptador):
 
     def _claves(self, coleccion: str, count: int = 1000):
         # Usar scan_iter para evitar bloquear el servidor con keys()
+        """Itera las claves que pertenecen al prefijo ``coleccion``."""
         if coleccion == SIN_PREFIJO:
             return (k for k in self.client.scan_iter(count=count) if ":" not in k)
         return self.client.scan_iter(match=f"{coleccion}:*", count=count)
 
     def obtener_muestra(self, coleccion: str, limite: int = 20) -> List[Dict[str, Any]]:
+        """Devuelve hasta ``limite`` registros del prefijo ``coleccion``."""
         muestra = []
         for key in self._claves(coleccion, count=200):
             tipo = self.client.type(key)
@@ -178,23 +188,29 @@ class RedisAdapter(Adaptador):
         return obj if isinstance(obj, dict) else None
 
     def _registros(self, coleccion: str):
+        """Itera los registros (diccionarios) del prefijo ``coleccion``."""
         for key in self._claves(coleccion):
             obj = self._leer_registro(key)
             if obj is not None:
                 yield obj
 
     def existe(self, coleccion: str, campo: str, valor: Any) -> bool:
+        """Indica si algún registro del prefijo tiene ``campo`` igual a ``valor``."""
         return any(obj.get(campo) == valor for obj in self._registros(coleccion))
 
     def obtener(self, coleccion: str, filtro: Dict) -> List[Dict]:
+        """Devuelve los registros del prefijo que cumplen todos los pares de ``filtro``."""
         return [obj for obj in self._registros(coleccion)
                 if all(obj.get(k) == v for k, v in filtro.items())]
 
     def contar_duplicados(self, coleccion: str, campo: str, valor: Any) -> int:
+        """Cuenta los registros del prefijo con ``campo`` igual a ``valor``."""
         return sum(1 for obj in self._registros(coleccion) if obj.get(campo) == valor)
 
     def obtener_todos(self, coleccion: str) -> List[Dict]:
+        """Devuelve todos los registros del prefijo ``coleccion``."""
         return self.obtener(coleccion, {})
 
     def cerrar(self) -> None:
+        """Cierra la conexión con Redis."""
         self.client.close()

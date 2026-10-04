@@ -1,3 +1,5 @@
+"""Adaptador de Cassandra (DataStax Astra) basado en ``cassandra-driver``."""
+
 import os
 from typing import List, Dict, Any
 from cassandra.cluster import Cluster
@@ -11,7 +13,9 @@ def _q(identificador: str) -> str:
     return '"' + str(identificador).replace('"', '""') + '"'
 
 class CassandraAdapter(Adaptador):
+    """Acceso a un keyspace de Cassandra: tablas como recursos y filas como registros."""
     def __init__(self, config: Dict[str, Any] = None):
+        """Conecta con Astra usando el Secure Connect Bundle y el token de ``config``."""
         if config is None: config = {}
         self.keyspace = config.get("CASSANDRA_KEYSPACE", os.environ.get("CASSANDRA_KEYSPACE", "default_keyspace"))
         self._temp_bundle_path = None
@@ -45,12 +49,14 @@ class CassandraAdapter(Adaptador):
         self.session.row_factory = dict_factory
 
     def verificar_salud(self) -> Dict[str, Any]:
+        """Consulta el nodo local y devuelve el estado y la latencia."""
         import time
         started = time.perf_counter()
         self.session.execute("SELECT keyspace_name FROM system_schema.keyspaces WHERE keyspace_name = %s", (self.keyspace,))
         return {"estado": "Disponible", "latencia_ms": round((time.perf_counter() - started) * 1000, 2), "detalle": self.keyspace}
 
     def obtener_info_completa(self) -> Dict[str, Any]:
+        """Devuelve versión, centro de datos, tablas y columnas del keyspace."""
         import time
         started = time.perf_counter()
         self.session.execute("SELECT keyspace_name FROM system_schema.keyspaces WHERE keyspace_name = %s", (self.keyspace,))
@@ -115,11 +121,13 @@ class CassandraAdapter(Adaptador):
         return info
 
     def listar_recursos(self) -> List[Dict[str, Any]]:
+        """Lista las tablas del keyspace configurado."""
         rows = self.session.execute("SELECT table_name FROM system_schema.tables WHERE keyspace_name = %s", (self.keyspace,))
         return [{"nombre": row["table_name"], "registros": None} for row in rows]
 
     def obtener_muestra(self, coleccion: str, limite: int = 20) -> List[Dict[str, Any]]:
         # El identificador procede de system_schema, no de entrada libre del usuario.
+        """Devuelve hasta ``limite`` filas de la tabla ``coleccion``."""
         coleccion = self._tabla(coleccion)
         permitidas = {item["nombre"] for item in self.listar_recursos()}
         if coleccion not in permitidas:
@@ -137,12 +145,14 @@ class CassandraAdapter(Adaptador):
 
     def existe(self, coleccion: str, campo: str, valor: Any) -> bool:
         # Cassandra requiere ALLOW FILTERING si no es partition key
+        """Indica si alguna fila de la tabla tiene ``campo`` igual a ``valor``."""
         coleccion = self._tabla(coleccion)
         query = f"SELECT * FROM {_q(coleccion)} WHERE {_q(campo)} = %s LIMIT 1 ALLOW FILTERING"
         rows = self.session.execute(query, (valor,))
         return len(list(rows)) > 0
 
     def obtener(self, coleccion: str, filtro: Dict) -> List[Dict]:
+        """Devuelve las filas de la tabla que cumplen ``filtro``."""
         coleccion = self._tabla(coleccion)
         if not filtro:
             query = f"SELECT * FROM {_q(coleccion)}"
@@ -154,6 +164,7 @@ class CassandraAdapter(Adaptador):
         return list(self.session.execute(query, valores))
 
     def contar_duplicados(self, coleccion: str, campo: str, valor: Any) -> int:
+        """Cuenta las filas de la tabla con ``campo`` igual a ``valor``."""
         coleccion = self._tabla(coleccion)
         query = f"SELECT COUNT(*) as count FROM {_q(coleccion)} WHERE {_q(campo)} = %s ALLOW FILTERING"
         rows = self.session.execute(query, (valor,))
@@ -161,9 +172,11 @@ class CassandraAdapter(Adaptador):
         return res[0]['count'] if res else 0
 
     def obtener_todos(self, coleccion: str) -> List[Dict]:
+        """Devuelve todas las filas de la tabla ``coleccion``."""
         return self.obtener(coleccion, {})
 
     def cerrar(self) -> None:
+        """Cierra la sesión, el clúster y el bundle temporal."""
         self.session.shutdown()
         self.cluster.shutdown()
         

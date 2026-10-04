@@ -1,3 +1,5 @@
+"""Escaneo por lotes (Scan Batch) de los datos existentes en los motores."""
+
 import json
 from typing import List, Dict, Any
 import jsonschema
@@ -17,7 +19,9 @@ def _tiene_valor(registro: Dict, campo: str) -> bool:
 
 
 class VerificadorBatch:
+    """Evalúa todas las reglas del usuario y registra las anomalías encontradas."""
     def __init__(self, usuario: str):
+        """Crea el verificador para ``usuario``; ``errores`` acumula los fallos de conexión."""
         self.usuario = usuario
         self.motor_reglas = MotorReglas(usuario)
         self.auditoria = LogAuditoria(usuario)
@@ -26,11 +30,13 @@ class VerificadorBatch:
 
     def _adaptador(self, motor: str):
         # Reutiliza una conexion por motor durante todo el escaneo
+        """Devuelve (y reutiliza) el adaptador de ``motor``."""
         if motor not in self._adaptadores:
             self._adaptadores[motor] = get_adapter(motor, self.usuario)
         return self._adaptadores[motor]
 
     def _cerrar_adaptadores(self) -> None:
+        """Cierra las conexiones abiertas durante el escaneo."""
         for adp in self._adaptadores.values():
             try:
                 adp.cerrar()
@@ -39,6 +45,7 @@ class VerificadorBatch:
         self._adaptadores = {}
 
     def ejecutar_verificacion(self) -> List[Dict]:
+        """Ejecuta las cuatro clases de reglas, reemplaza las violaciones previas y las devuelve."""
         reglas = self.motor_reglas.obtener_reglas()
         violaciones_detectadas = []
         self.errores = []
@@ -70,6 +77,7 @@ class VerificadorBatch:
         return violaciones_detectadas
 
     def _violacion(self, regla: Dict, motores: str, dato: Dict) -> Dict:
+        """Construye el registro de una violación."""
         return {
             "regla_id": regla['id'],
             "tipo": regla['tipo'],
@@ -78,6 +86,7 @@ class VerificadorBatch:
         }
 
     def _verificar_referencial(self, regla: Dict) -> List[Dict]:
+        """Detecta registros cuyo campo de cruce no existe en la colección destino."""
         motor_origen = regla['motor_origen']
         motor_destino = regla['motor_destino']
         campo_origen = regla['campo']
@@ -142,6 +151,7 @@ class VerificadorBatch:
         return violaciones
 
     def _verificar_esquema(self, regla: Dict) -> List[Dict]:
+        """Detecta registros que no cumplen el JSON Schema de la regla."""
         motor_origen = regla.get('motor_origen')
         coleccion_origen = regla.get('coleccion_origen')
         schema = regla.get('schema') or {}
@@ -157,6 +167,7 @@ class VerificadorBatch:
         return violaciones
 
     def _verificar_unicidad(self, regla: Dict) -> List[Dict]:
+        """Detecta valores repetidos en el campo de la regla."""
         motor_origen = regla.get('motor_origen')
         coleccion_origen = regla.get('coleccion_origen')
         campo = regla.get('campo')

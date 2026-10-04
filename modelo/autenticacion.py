@@ -1,3 +1,5 @@
+"""Registro, inicio de sesión y actividad de los usuarios (tabla ``usuarios_sistema``)."""
+
 import re
 from datetime import datetime, timezone, timedelta
 import bcrypt
@@ -7,10 +9,16 @@ from .supabase_client import SupabaseClient
 USUARIO_VALIDO = re.compile(r"[A-Za-z0-9_-]{3,30}")
 
 class Autenticacion:
+    """Gestiona las cuentas de la plataforma con contraseñas cifradas con bcrypt."""
     def __init__(self):
+        """Obtiene el cliente de Supabase."""
         self.supabase = SupabaseClient().get_client()
 
     def registrar_usuario(self, usuario: str, password: str) -> Tuple[bool, str]:
+        """Crea una cuenta tras validar el nombre (3-30 caracteres) y la contraseña (mínimo 6).
+
+        Devuelve ``(exito, mensaje)``; rechaza duplicados sin distinguir mayúsculas.
+        """
         if not self.supabase:
             return False, "Error de conexión a Supabase."
 
@@ -61,6 +69,7 @@ class Autenticacion:
         return False, "Usuario o contraseña incorrectos.", None
 
     def actualizar_actividad(self, usuario: str):
+        """Registra la fecha de la última actividad del usuario."""
         if self.supabase:
             try:
                 ahora = datetime.now(timezone.utc).isoformat()
@@ -69,6 +78,7 @@ class Autenticacion:
                 pass
 
     def obtener_usuarios_activos(self, minutos: int = 5) -> list:
+        """Devuelve los usuarios con actividad en los últimos ``minutos``."""
         if not self.supabase:
             return []
         try:
