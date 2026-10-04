@@ -1,0 +1,91 @@
+# Release y despliegue: al publicar una etiqueta vX.Y.Z (o manualmente) se prueban los cambios,
+# se crea el Release de GitHub con el paquete de la aplicación, se migran los objetos de la base
+# de datos (Liquibase) y se despliega/verifica la app en Streamlit Community Cloud.
+name: Release y despliegue
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Versión a publicar (por ejemplo v1.1.0)"
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  VERSION: ${{ github.event.inputs.version || github.ref_name }}
+  APP_URL: https://motor-integridad.streamlit.app
+
+jobs:
+  pruebas:
+    name: Pruebas
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - run: pytest -q
+
+  release:
+    name: Crear release
+    needs: pruebas
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Empaquetar aplicación
+        run: |
+          mkdir -p build
+          zip -qr "build/motor-integridad-${VERSION}.zip" vista controlador modelo liquibase infra \
+            requirements.txt supabase_schema.sql .streamlit/config.toml .env.example README_APP.md -x "*__pycache__*"
+          sha256sum build/*.zip > build/SHA256SUMS.txt
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.VERSION }}
+          name: Motor de Integridad ${{ env.VERSION }}
+          generate_release_notes: true
+          body: |
+            Aplicación: ${{ env.APP_URL }}
+            Documentación técnica: https://keylalopezz.github.io/motor-integridad/
+          files: |
+            build/motor-integridad-${{ env.VERSION }}.zip
+            build/SHA256SUMS.txt
+
+  despliegue:
+    name: Desplegar en la infraestructura
+    needs: release
+    runs-on: ubuntu-latest
+    environment:
+      name: produccion
+      url: ${{ env.APP_URL }}
+    env:
+      SUPA_URL: ${{ secrets.LIQUIBASE_URL }}
+      SUPA_USER: ${{ secrets.LIQUIBASE_USERNAME }}
+      SUPA_PASS: ${{ secrets.LIQUIBASE_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Migrar base de datos (Liquibase)
+        if: env.SUPA_URL != ''
+        run: bash scripts/liquibase.sh
+      - name: Desplegar y verificar la aplicación
+        run: |
+          # Streamlit Community Cloud redespliega automáticamente la rama main; aquí se espera
+          # a que la app responda y se registra el resultado del despliegue.
+          for intento in $(seq 1 20); do
+            estado=$(curl -s -L -c /tmp/c -b /tmp/c --max-time 30 "$APP_URL/healthz" || true)
+            [ "$estado" = '{"status":"ok"}' ] && break
+            sleep 15
+          done
+          {
+            echo "# Despliegue ${VERSION}"
+            echo "- Aplicación: $APP_URL"
+            echo "- Commit: \`${GITHUB_SHA::7}\`"
+            echo "- Estado de salud: \`${estado:-sin respuesta}\`"
+            echo "- Migración de base de datos: $([ -n "$SUPA_URL" ] && echo 'aplicada con Liquibase' || echo 'omitida (faltan secretos)')"
+          } >> $GITHUB_STEP_SUMMARY
+          [ "$estado" = '{"status":"ok"}' ]
