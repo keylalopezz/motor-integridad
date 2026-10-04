@@ -1,0 +1,45 @@
+# Configura los objetos de la base de datos con Liquibase y genera el reporte de ejecuciones.
+# 1) Siempre: aplica el changelog sobre un PostgreSQL temporal (prueba de la migración).
+# 2) Si existen los secretos LIQUIBASE_URL, LIQUIBASE_USERNAME y LIQUIBASE_PASSWORD: aplica en Supabase.
+name: Base de datos (Liquibase)
+
+on:
+  push:
+    branches: [main]
+    paths: ["liquibase/**", ".github/workflows/liquibase.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  liquibase:
+    name: Migraciones y reporte
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: motor
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      LB_IMAGE: liquibase/liquibase:4.29.2
+      SUPA_URL: ${{ secrets.LIQUIBASE_URL }}
+      SUPA_USER: ${{ secrets.LIQUIBASE_USERNAME }}
+      SUPA_PASS: ${{ secrets.LIQUIBASE_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ejecutar Liquibase
+        run: bash scripts/liquibase.sh
+
+      - name: Publicar reporte
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reporte-liquibase
+          path: build/liquibase

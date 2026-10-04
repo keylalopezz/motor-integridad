@@ -1,0 +1,13 @@
+# Changelog maestro de Liquibase: objetos de la base de datos de control (Supabase / PostgreSQL).
+# Los cambios son idempotentes (IF NOT EXISTS) para aplicarse tanto sobre una base vacía
+# como sobre el proyecto de Supabase ya existente.
+databaseChangeLog:
+  - include:
+      file: changelog/001-esquema-inicial.sql
+      relativeToChangelogFile: true
+  - include:
+      file: changelog/002-seguridad-rls.sql
+      relativeToChangelogFile: true
+  - include:
+      file: changelog/003-eventos-uso.sql
+      relativeToChangelogFile: true
