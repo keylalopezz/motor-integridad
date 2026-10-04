@@ -1,0 +1,32 @@
+@startuml
+!include estilo.iuml
+!pragma layout smetana
+left to right direction
+package "Motor de Integridad Multibase NoSQL" {
+  package "Seguridad y acceso" as P1 {
+  }
+  package "Gestión de conexiones" as P2 {
+  }
+  package "Gestión de reglas" as P3 {
+  }
+  package "Verificación" as P4 {
+    package "Validación previa" as P41 {
+    }
+    package "Escaneo por lotes" as P42 {
+    }
+  }
+  package "Auditoría y reportes" as P5 {
+  }
+  package "Monitoreo" as P6 {
+  }
+  package "Comunidad" as P7 {
+  }
+}
+P2 ..> P1 : <<usa>>
+P3 ..> P1 : <<usa>>
+P4 ..> P3 : <<usa>>
+P4 ..> P2 : <<usa>>
+P4 ..> P5 : <<usa>>
+P6 ..> P2 : <<usa>>
+P7 ..> P1 : <<usa>>
+@enduml

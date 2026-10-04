@@ -1,0 +1,24 @@
+@startuml
+!include estilo.iuml
+!pragma useVerticalIf on
+|Área afectada|
+start
+:Detecta un error en pedidos,\npagos o datos de clientes;
+:Reporta la incidencia por correo;
+|Administrador de BD|
+:Revisa la incidencia;
+:Escribe consultas o scripts\nen MongoDB, Redis y Cassandra;
+:Exporta los resultados\na hojas de cálculo;
+|Analista de calidad|
+:Compara manualmente los datos\nentre motores;
+if (¿Se confirma la inconsistencia?) then (sí)
+  :Corrige el dato manualmente\nen cada motor;
+  :Registra la corrección\nen una hoja de cálculo;
+else (no)
+  :Cierra la incidencia\nsin evidencia;
+endif
+|Auditor interno|
+:Solicita evidencia\npara la auditoría;
+:Recibe hojas de cálculo\nsin trazabilidad;
+stop
+@enduml

@@ -1,0 +1,65 @@
+@startuml
+!include estilo.iuml
+!pragma layout smetana
+hide circle
+skinparam linetype ortho
+class Usuario {
+  usuario : texto
+  passwordHash : texto
+  creadoEn : fecha
+  ultimoAcceso : fecha
+}
+class Conexion {
+  motor : TipoMotor
+  configuracionCifrada : JSON
+  actualizadoEn : fecha
+}
+abstract class Regla {
+  id : UUID
+  motorOrigen : TipoMotor
+  coleccionOrigen : texto
+  campo : texto
+  creadoEn : fecha
+}
+class ReglaEsquema {
+  jsonSchema : JSON
+}
+class ReglaUnicidad
+class ReglaReferencial {
+  motorDestino : TipoMotor
+  coleccionDestino : texto
+  campoDestino : texto
+}
+class ReglaConsistencia {
+  motorDestino : TipoMotor
+  coleccionDestino : texto
+  campoDestino : texto
+}
+class Violacion {
+  id : UUID
+  tipo : texto
+  motoresInvolucrados : texto
+  datoAfectado : JSON
+  detectadoEn : fecha
+}
+class Reporte {
+  violaciones : lista
+  generarPDF()
+}
+enum TipoMotor {
+  mongodb
+  redis
+  cassandra
+}
+Usuario "1" -- "0..3" Conexion : configura >
+Usuario "1" -- "0..*" Regla : define >
+Regla <|-- ReglaEsquema
+Regla <|-- ReglaUnicidad
+Regla <|-- ReglaReferencial
+Regla <|-- ReglaConsistencia
+Regla "1" -- "0..*" Violacion : genera >
+Usuario "1" -- "0..*" Violacion : audita >
+Reporte o-- "0..*" Violacion
+Conexion ..> TipoMotor
+Regla ..> TipoMotor
+@enduml

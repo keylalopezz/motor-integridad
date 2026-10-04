@@ -1,0 +1,32 @@
+@startuml
+!include estilo.iuml
+|Usuario|
+start
+:Seleccionar motor y colección;
+:Ingresar el registro en JSON;
+:[Registro JSON];
+|Sistema|
+:Obtener las reglas de la colección;
+:[Regla] reglas de esquema y unicidad;
+:[Resultado] = válido;
+while (¿Quedan reglas y el resultado es válido?) is (sí)
+  if (Tipo de regla) then (esquema)
+    :Validar el registro
+con el JSON Schema;
+  else (unicidad)
+    :Consultar al motor NoSQL
+si el valor ya existe;
+  endif
+  :Actualizar [Resultado];
+endwhile (no)
+:Mostrar [Resultado];
+|Usuario|
+if (¿Validación exitosa?) then (sí)
+  :Escribir el registro
+en el motor;
+else (no)
+  :Corregir el registro
+según el error indicado;
+endif
+stop
+@enduml

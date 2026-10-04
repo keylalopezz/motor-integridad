@@ -1,0 +1,36 @@
+@startuml
+!include estilo.iuml
+!pragma layout elk
+skinparam linetype ortho
+node "Equipo del usuario" as PC {
+  artifact "Navegador web\n(Chrome / Edge / Firefox)" as NAV
+}
+cloud "GitHub" as GH {
+  artifact "Repositorio\nkeylalopezz/motor-integridad" as REPO
+}
+node "Streamlit Community Cloud" as SCC <<PaaS>> {
+  node "Contenedor Linux · Python 3.12" as CONT {
+    artifact "vista/app.py\n(Streamlit)" as APP
+    artifact "controlador/ y modelo/" as LOG
+    artifact "Secrets\nSUPABASE_URL · SUPABASE_KEY\nENCRYPTION_KEY" as SEC
+  }
+}
+node "Supabase (AWS)" as SUP <<DBaaS>> {
+  database "PostgreSQL\nusuarios · reglas\nauditoría · conexiones" as PG
+}
+node "MongoDB Atlas" as ATL <<DBaaS>> {
+  database "Clúster M0\nbase tienda" as MDB
+}
+node "Upstash" as UPS <<DBaaS>> {
+  database "Redis serverless" as RDB
+}
+node "DataStax Astra" as AST <<DBaaS>> {
+  database "Cassandra\nkeyspace tienda" as CDB
+}
+NAV --> APP : HTTPS / WebSocket
+REPO --> SCC : despliegue automático\nen cada push a main
+APP --> PG : HTTPS (API REST)
+APP --> MDB : TLS · mongodb+srv
+APP --> RDB : TLS · rediss://
+APP --> CDB : TLS · Secure Connect Bundle
+@enduml

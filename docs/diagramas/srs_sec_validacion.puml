@@ -1,0 +1,26 @@
+@startuml
+!include estilo.iuml
+autonumber
+actor Desarrollador as D
+boundary "Simulador\npre-escritura" as UI
+control "Controlador de\nverificación" as C
+control Validador as V
+entity "Regla" as R
+participant "Motor NoSQL" as M
+D -> UI : motor, colección y registro JSON
+UI -> C : validar_insercion(motor, colección, registro)
+C -> V : validar_registro(...)
+V -> R : obtener reglas de la colección
+R --> V : reglas
+loop por cada regla
+  alt esquema
+    V -> V : validar con JSON Schema
+  else unicidad
+    V -> M : contar_duplicados(campo, valor)
+    M --> V : cantidad
+  end
+end
+V --> C : (válido, mensaje)
+C --> UI : resultado
+UI --> D : mostrar éxito o error
+@enduml

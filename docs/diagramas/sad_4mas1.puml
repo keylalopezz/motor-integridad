@@ -1,0 +1,22 @@
+@startuml
+!include estilo.iuml
+!pragma layout smetana
+skinparam rectangle {
+  BackgroundColor #F6F4FE
+  BorderColor #4B3F9E
+  FontSize 13
+}
+rectangle "<b>Vista Lógica</b>\nUsuarios finales: funcionalidad\n<i>subsistemas, secuencia, colaboración,</i>\n<i>objetos, clases y base de datos</i>" as L
+rectangle "<b>Vista de Implementación</b>\nProgramadores: organización del código\n<i>paquetes y componentes</i>" as I
+usecase "<b>Escenarios</b>\n(vista de casos de uso)" as E
+rectangle "<b>Vista de Procesos</b>\nIntegradores: comportamiento y flujo\n<i>diagrama de actividades</i>" as P
+rectangle "<b>Vista Física</b>\nIngenieros de sistemas: despliegue\n<i>nodos y servicios en la nube</i>" as F
+L -[hidden]right- I
+P -[hidden]right- F
+L -[hidden]down- P
+I -[hidden]down- F
+L -- E
+I -- E
+P -- E
+F -- E
+@enduml

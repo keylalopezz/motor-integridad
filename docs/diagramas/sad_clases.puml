@@ -1,0 +1,114 @@
+@startuml
+!include estilo.iuml
+!pragma layout smetana
+skinparam linetype ortho
+skinparam classAttributeIconSize 0
+package controlador {
+  class ControladorAuth {
+    +registrar(usuario, password) : (bool, str)
+    +login(usuario, password) : (bool, str, str)
+    +actualizar_actividad(usuario)
+    +obtener_usuarios_activos(minutos) : list
+  }
+  class ControladorReglas {
+    +crear_regla(regla) : dict
+    +obtener_reglas(filtros) : list
+    +eliminar_regla(regla_id) : bool
+  }
+  class ControladorVerificacion {
+    +validar_insercion(motor, coleccion, registro) : (bool, str)
+    +ejecutar_verificacion_batch() : (list, list)
+  }
+  class ControladorReporte {
+    +obtener_violaciones(filtros) : list
+  }
+}
+package modelo {
+  class SupabaseClient <<singleton>> {
+    -_instance
+    +get_client() : Client
+  }
+  class Autenticacion {
+    +registrar_usuario(usuario, password)
+    +verificar_login(usuario, password)
+    +actualizar_actividad(usuario)
+    +obtener_usuarios_activos(minutos)
+  }
+  class MotorReglas {
+    -usuario : str
+    +crear_regla(regla) : dict
+    +obtener_reglas(filtros) : list
+    +actualizar_regla(id, datos) : dict
+    +eliminar_regla(id) : bool
+  }
+  class Validador {
+    -usuario : str
+    +validar_registro(motor, coleccion, registro) : (bool, str)
+  }
+  class VerificadorBatch {
+    -usuario : str
+    +errores : list
+    +ejecutar_verificacion() : list
+    -_verificar_esquema(regla)
+    -_verificar_unicidad(regla)
+    -_verificar_referencial(regla)
+    -_verificar_consistencia(regla)
+  }
+  class LogAuditoria {
+    -usuario : str
+    +registrar_violaciones(lista) : list
+    +limpiar_regla(regla_id)
+    +obtener_violaciones(filtros) : list
+  }
+  class GestorConexiones {
+    -usuario : str
+    -_cifrar(config) : dict
+    -_descifrar(config) : dict
+    +guardar_conexion(motor, config)
+    +obtener_conexion(motor) : dict
+    +motores_configurados() : list
+    +eliminar_conexion(motor)
+  }
+}
+package adaptadores {
+  abstract class Adaptador <<interface>> {
+    +existe(coleccion, campo, valor) : bool
+    +obtener(coleccion, filtro) : list
+    +contar_duplicados(coleccion, campo, valor) : int
+    +obtener_todos(coleccion) : list
+    +verificar_salud() : dict
+    +listar_recursos() : list
+    +obtener_muestra(coleccion, limite) : list
+    +obtener_info_completa() : dict
+    +cerrar()
+  }
+  class MongoAdapter
+  class RedisAdapter {
+    -_claves(coleccion)
+    -_leer_registro(key) : dict
+  }
+  class CassandraAdapter {
+    -_tabla(coleccion) : str
+  }
+  class "get_adapter()" as fabrica <<factory>>
+}
+Adaptador <|.. MongoAdapter
+Adaptador <|.. RedisAdapter
+Adaptador <|.. CassandraAdapter
+ControladorAuth --> Autenticacion
+ControladorReglas --> MotorReglas
+ControladorVerificacion --> Validador
+ControladorVerificacion --> VerificadorBatch
+ControladorReporte --> LogAuditoria
+Validador --> MotorReglas
+VerificadorBatch --> MotorReglas
+VerificadorBatch --> LogAuditoria
+VerificadorBatch ..> fabrica
+Validador ..> fabrica
+fabrica ..> GestorConexiones
+fabrica ..> Adaptador : crea >
+Autenticacion --> SupabaseClient
+MotorReglas --> SupabaseClient
+LogAuditoria --> SupabaseClient
+GestorConexiones --> SupabaseClient
+@enduml

@@ -1,0 +1,25 @@
+@startuml
+!include estilo.iuml
+autonumber
+actor "Administrador de BD" as A
+boundary "Centro de\nEjecución" as UI
+control "Controlador de\nverificación" as C
+control "Verificador\npor lotes" as V
+entity "Regla" as R
+participant "Motores NoSQL" as M
+entity "Auditoría" as L
+A -> UI : Iniciar Escaneo Profundo
+UI -> C : ejecutar_verificacion_batch()
+C -> V : ejecutar_verificacion()
+V -> R : obtener reglas activas
+R --> V : reglas
+loop por cada regla
+  V -> M : obtener registros de origen y destino
+  M --> V : registros
+  V -> V : evaluar según el tipo de regla
+  V -> L : reemplazar violaciones de la regla
+end
+V --> C : violaciones, errores
+C --> UI : resultados
+UI --> A : «Se detectaron N anomalías»
+@enduml

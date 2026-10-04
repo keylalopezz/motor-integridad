@@ -1,0 +1,40 @@
+@startuml
+!include estilo.iuml
+!pragma layout smetana
+left to right direction
+actor "Usuario registrado" as U
+actor "Administrador de BD" as A
+actor "Analista de calidad" as Q
+actor "Desarrollador" as Dv
+actor "Auditor interno" as Au
+A -up-|> U
+Q -up-|> U
+Dv -up-|> U
+Au -up-|> U
+package "Subsistema de Seguridad" {
+  usecase "CU02 Iniciar sesión" as CU02
+  usecase "CU04 Gestionar conexiones\n(cifrado Fernet)" as CU04
+}
+package "Subsistema de Reglas" {
+  usecase "CU05 Gestionar reglas" as CU05
+}
+package "Subsistema de Verificación" {
+  usecase "CU06 Validar registro\nprevio a la escritura" as CU06
+  usecase "CU07 Ejecutar escaneo\npor lotes" as CU07
+  usecase "CU08 Registrar violaciones" as CU08
+}
+package "Subsistema de Observabilidad" {
+  usecase "CU09 Monitorear motores" as CU09
+  usecase "CU10 Consultar dashboard" as CU10
+  usecase "CU11 Generar reporte" as CU11
+}
+U --> CU02
+A --> CU04
+A --> CU09
+Q --> CU05
+Q --> CU07
+Dv --> CU06
+Au --> CU10
+Au --> CU11
+CU07 ..> CU08 : <<include>>
+@enduml

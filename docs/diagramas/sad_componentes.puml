@@ -1,0 +1,49 @@
+@startuml
+!include estilo.iuml
+!pragma layout smetana
+skinparam linetype ortho
+component "Interfaz web\n[Streamlit]" as UI
+component "Controladores" as CT
+component "Servicio de autenticación" as AU
+component "Motor de reglas" as MR
+component "Validador previo" as VA
+component "Verificador por lotes" as VB
+component "Registro de auditoría" as LA
+component "Gestor de conexiones" as GC
+component "Generador de reportes\n[fpdf2]" as PDF
+interface "IAdaptador" as IA
+component "MongoAdapter\n[pymongo]" as MA
+component "RedisAdapter\n[redis-py]" as RA
+component "CassandraAdapter\n[cassandra-driver]" as CA
+interface "API REST\nSupabase" as ISB
+database "Supabase\n(PostgreSQL)" as SB
+database "MongoDB Atlas" as MDB
+database "Upstash Redis" as RDB
+database "DataStax Astra" as CDB
+UI --> CT
+UI --> PDF
+CT --> AU
+CT --> MR
+CT --> VA
+CT --> VB
+CT --> LA
+VA --> MR
+VB --> MR
+VB --> LA
+VA --> IA
+VB --> IA
+IA <|.. MA
+IA <|.. RA
+IA <|.. CA
+MA ..> GC : credenciales
+RA ..> GC
+CA ..> GC
+AU --> ISB
+MR --> ISB
+LA --> ISB
+GC --> ISB
+ISB - SB
+MA --> MDB : TLS
+RA --> RDB : TLS
+CA --> CDB : TLS
+@enduml

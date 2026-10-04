@@ -1,0 +1,49 @@
+@startuml
+!include estilo.iuml
+!pragma layout smetana
+hide circle
+skinparam linetype ortho
+package "MongoDB Atlas · base tienda (documental)" #FFF8EC {
+  entity "usuarios" as mu {
+    _id : string
+    --
+    nombre : string
+    email : string
+    edad : int
+    estado : string
+  }
+  entity "pedidos" as mp {
+    _id : string
+    --
+    usuario_id : string
+    producto : string
+    total : double
+  }
+}
+package "Upstash Redis (clave-valor)" #EAF4FA {
+  entity "usuarios:{_id}" as ru {
+    valor JSON
+    --
+    nombre, email, edad, estado
+  }
+  entity "pedidos:{_id}" as rp {
+    valor JSON
+    --
+    usuario_id, producto, total
+  }
+}
+package "DataStax Astra · keyspace tienda (columnas anchas)" #E7F5EC {
+  entity "pagos" as cp {
+    id : text <<PK>>
+    --
+    pedido_id : text
+    transaccion : text
+    monto : decimal
+    metodo : text
+  }
+}
+mp }o..|| mu : referencial\nusuario_id → _id
+rp }o..|| mu : referencial
+cp }o..|| mp : referencial\npedido_id → _id
+mu ||..|| ru : consistencia\n(réplica)
+@enduml

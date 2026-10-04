@@ -1,0 +1,51 @@
+@startuml
+!include estilo.iuml
+!pragma layout smetana
+hide circle
+skinparam linetype ortho
+entity "usuarios_sistema" as us {
+  * id : uuid <<PK>>
+  --
+  * usuario : text <<UNIQUE>>
+  * password_hash : text
+  creado_en : timestamptz
+  ultimo_acceso : timestamptz
+}
+entity "reglas" as r {
+  * id : uuid <<PK>>
+  --
+  usuario : text <<FK>>
+  * tipo : text <<CHECK>>
+  * motor_origen : text
+  * coleccion_origen : text
+  * campo : text
+  motor_destino : text
+  coleccion_destino : text
+  campo_destino : text
+  schema : jsonb
+  creado_en : timestamptz
+}
+entity "auditoria_violaciones" as a {
+  * id : uuid <<PK>>
+  --
+  usuario : text <<FK>>
+  regla_id : uuid <<FK>>
+  * tipo : text
+  * motores_involucrados : text
+  dato_afectado : jsonb
+  detectado_en : timestamptz
+}
+entity "conexiones_motores" as c {
+  * usuario : text <<PK, FK>>
+  * motor : text <<PK>>
+  --
+  * config : jsonb (cifrado)
+  actualizado_en : timestamptz
+}
+us ||--o{ r : define
+us ||--o{ a : audita
+r ||--o{ a : genera
+us ||--o{ c : configura
+note bottom of a : ON DELETE CASCADE desde reglas;\níndice (usuario, regla_id)
+note bottom of c : RLS activado en las cuatro tablas
+@enduml

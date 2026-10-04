@@ -1,0 +1,29 @@
+@startuml
+!include estilo.iuml
+autonumber "<b>0."
+actor "Administrador de BD" as U
+participant ":0_Conexiones" as P
+participant ":RedisAdapter" as AD
+participant ":GestorConexiones" as G
+participant "Fernet" as F
+database "Upstash Redis" as R
+database "Supabase" as S
+U -> P : credenciales + «Probar y guardar»
+P -> AD ** : RedisAdapter(config)
+P -> AD : verificar_salud()
+AD -> R : PING (TLS)
+R --> AD : PONG
+AD --> P : {estado, latencia_ms}
+alt conexión correcta
+  P -> G : guardar_conexion("redis", config)
+  G -> F : encrypt(json(config))
+  F --> G : token
+  G -> S : UPSERT conexiones_motores\n(usuario, motor, {_cifrado: token})
+  S --> G : ok
+  P --> U : «Conexión correcta (N ms)»
+else error
+  AD --> P : excepción
+  P --> U : «No se pudo conectar: ...»
+end
+P -> AD : cerrar()
+@enduml

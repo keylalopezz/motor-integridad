@@ -1,0 +1,87 @@
+' Estilo común de los diagramas del proyecto (paleta de Datastack)
+skinparam dpi 150
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+skinparam shadowing false
+skinparam roundCorner 10
+skinparam ArrowColor #3A3A3A
+skinparam ArrowThickness 1.1
+skinparam backgroundColor white
+skinparam titleFontSize 14
+skinparam actor {
+  BorderColor #4B3F9E
+  BackgroundColor #ECE9FB
+}
+skinparam usecase {
+  BackgroundColor #FFF4E0
+  BorderColor #C47F17
+}
+skinparam rectangle {
+  BorderColor #4B3F9E
+  BackgroundColor #FBFAFF
+}
+skinparam package {
+  BorderColor #4B3F9E
+  BackgroundColor #FAF9FF
+  FontStyle bold
+}
+skinparam class {
+  BackgroundColor #F6F4FE
+  BorderColor #4B3F9E
+  HeaderBackgroundColor #E4DFFB
+  AttributeFontSize 11
+}
+skinparam object {
+  BackgroundColor #FFF8EC
+  BorderColor #C47F17
+}
+skinparam component {
+  BackgroundColor #EAF4FA
+  BorderColor #1F6F8B
+}
+skinparam interface {
+  BackgroundColor #FFFFFF
+  BorderColor #1F6F8B
+}
+skinparam node {
+  BackgroundColor #F3F3F3
+  BorderColor #555555
+}
+skinparam database {
+  BackgroundColor #E7F5EC
+  BorderColor #2E7D4F
+}
+skinparam cloud {
+  BackgroundColor #F0F7FF
+  BorderColor #1F6F8B
+}
+skinparam activity {
+  BackgroundColor #F6F4FE
+  BorderColor #4B3F9E
+  DiamondBackgroundColor #FFF4E0
+  DiamondBorderColor #C47F17
+}
+skinparam partition {
+  BorderColor #4B3F9E
+}
+skinparam swimlane {
+  BorderColor #9A93C9
+  TitleFontStyle bold
+}
+skinparam sequence {
+  LifeLineBorderColor #4B3F9E
+  ParticipantBackgroundColor #F6F4FE
+  ParticipantBorderColor #4B3F9E
+  ActorBackgroundColor #ECE9FB
+  ActorBorderColor #4B3F9E
+  GroupBackgroundColor #FFF4E0
+  BoxBackgroundColor #FBFAFF
+}
+skinparam note {
+  BackgroundColor #FFFBEA
+  BorderColor #C9B458
+}
+skinparam entity {
+  BackgroundColor #F6F4FE
+  BorderColor #4B3F9E
+}

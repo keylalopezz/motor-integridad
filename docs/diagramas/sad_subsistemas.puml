@@ -1,0 +1,62 @@
+@startuml
+!include estilo.iuml
+!pragma layout elk
+skinparam linetype ortho
+package "Capa de Presentación (vista)" as V {
+  package "Acceso" as V1 {
+  }
+  package "Rutas" as V2 {
+  }
+}
+package "Capa de Control (controlador)" as C {
+  package "ControladorAuth" as C1 {
+  }
+  package "ControladorReglas" as C2 {
+  }
+  package "ControladorVerificacion" as C3 {
+  }
+  package "ControladorReporte" as C4 {
+  }
+}
+package "Capa de Negocio (modelo)" as M {
+  package "Autenticación" as M1 {
+  }
+  package "Motor de reglas" as M2 {
+  }
+  package "Verificación" as M3 {
+  }
+  package "Auditoría" as M4 {
+  }
+  package "Gestión de conexiones" as M5 {
+  }
+}
+package "Capa de Integración (adaptadores)" as A {
+  package "Interfaz Adaptador" as A0 {
+  }
+  package "MongoDB" as A1 {
+  }
+  package "Redis" as A2 {
+  }
+  package "Cassandra" as A3 {
+  }
+}
+package "Servicios externos" as X {
+  package "Supabase" as X1 {
+  }
+  package "MongoDB Atlas · Upstash · Astra" as X2 {
+  }
+}
+V ..> C
+C ..> M
+M ..> A
+M5 ..> X1
+M1 ..> X1
+M2 ..> X1
+M4 ..> X1
+A1 ..> X2
+A2 ..> X2
+A3 ..> X2
+A1 ..|> A0
+A2 ..|> A0
+A3 ..|> A0
+@enduml

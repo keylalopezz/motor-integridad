@@ -1,0 +1,51 @@
+@startuml
+!include estilo.iuml
+!pragma layout smetana
+skinparam linetype ortho
+package "motor-integridad" {
+  package "vista" {
+    file "app.py" as app
+    file "login.py" as login
+    package "rutas" {
+      file "0_Conexiones.py"
+      file "1_Reglas.py"
+      file "2_Verificacion.py"
+      file "3_Dashboard.py"
+      file "4_Comunidad.py"
+      file "5_Monitor.py"
+      file "6_Reportes.py"
+    }
+  }
+  package "controlador" {
+    file "controlador_auth.py"
+    file "controlador_reglas.py"
+    file "controlador_verificacion.py"
+    file "controlador_reporte.py"
+  }
+  package "modelo" {
+    file "supabase_client.py"
+    file "autenticacion.py"
+    file "gestor_conexiones.py"
+    file "motor_reglas.py"
+    file "validador.py"
+    file "verificador.py"
+    file "log_auditoria.py"
+    package "adaptadores" {
+      file "base.py"
+      file "mongo_adapter.py"
+      file "redis_adapter.py"
+      file "cassandra_adapter.py"
+    }
+  }
+  package "tests" {
+    file "test_autenticacion.py"
+    file "test_verificador.py"
+    file "test_redis_adapter.py"
+  }
+  file "requirements.txt"
+  file "supabase_schema.sql"
+}
+vista ..> controlador : <<importa>>
+controlador ..> modelo : <<importa>>
+tests ..> modelo : <<prueba>>
+@enduml

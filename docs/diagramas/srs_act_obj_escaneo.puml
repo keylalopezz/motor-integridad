@@ -1,0 +1,35 @@
+@startuml
+!include estilo.iuml
+|Usuario|
+start
+:Pulsa «Iniciar Escaneo Profundo»;
+|Sistema|
+:Obtener reglas activas del usuario;
+:[Regla] lista de reglas;
+repeat
+  :Tomar la siguiente regla;
+  :Obtener registros de origen\n(y de destino si corresponde);
+  :[Registro] registros del motor;
+  if (¿Se pudo leer el motor?) then (sí)
+    switch (Tipo de regla)
+    case (esquema)
+      :Validar cada registro\ncon JSON Schema;
+    case (unicidad)
+      :Agrupar registros\npor valor del campo;
+    case (referencial)
+      :Buscar el valor\nen el motor destino;
+    case (consistencia)
+      :Comparar atributos\ncompartidos;
+    endswitch
+    :[Violación] violaciones de la regla;
+    :Reemplazar violaciones previas\nde la regla en la auditoría;
+  else (no)
+    :Registrar el error y conservar\nlas violaciones anteriores;
+  endif
+repeat while (¿Quedan reglas?) is (sí)
+-> no;
+:Cerrar conexiones a los motores;
+|Usuario|
+:Ver cantidad de anomalías\ny errores;
+stop
+@enduml

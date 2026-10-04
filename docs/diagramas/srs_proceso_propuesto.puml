@@ -1,0 +1,26 @@
+@startuml
+!include estilo.iuml
+|Analista de calidad|
+start
+:Define las reglas de integridad\nen el sistema;
+|Desarrollador|
+:Valida los registros nuevos\ncon el simulador;
+|Motor de Integridad|
+:Evalúa el registro contra\nlas reglas de esquema y unicidad;
+if (¿Cumple las reglas?) then (sí)
+  |Desarrollador|
+  :Escribe el registro\nen el motor;
+else (no)
+  |Desarrollador|
+  :Corrige el registro;
+endif
+|Administrador de BD|
+:Ejecuta el escaneo por lotes;
+|Motor de Integridad|
+:Evalúa todas las reglas\nsobre MongoDB, Redis y Cassandra;
+:Registra las violaciones\nen la auditoría;
+|Auditor interno|
+:Consulta el dashboard;
+:Descarga el reporte PDF\ncon sugerencias;
+stop
+@enduml

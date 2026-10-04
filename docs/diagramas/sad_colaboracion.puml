@@ -1,0 +1,22 @@
+@startuml
+!include estilo.iuml
+!pragma layout elk
+object ":2_Verificacion" as P
+object ":ControladorVerificacion" as C
+object ":VerificadorBatch" as V
+object ":MotorReglas" as MR
+object ":GestorConexiones" as G
+object ":Adaptador" as A
+object ":LogAuditoria" as L
+object ":SupabaseClient" as S
+P --> C : 1: ejecutar_verificacion_batch()
+C --> V : 2: ejecutar_verificacion()
+V --> MR : 3: obtener_reglas()
+MR --> S : 4: select(reglas)
+V --> G : 5: obtener_conexion(motor)
+G --> S : 6: select(conexiones_motores)
+V --> A : 7*: obtener_todos(colección)
+V --> L : 8*: limpiar_regla(id)\n9*: registrar_violaciones(lista)
+L --> S : 10*: delete / insert(auditoria)
+V --> A : 11: cerrar()
+@enduml

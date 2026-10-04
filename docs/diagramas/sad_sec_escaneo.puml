@@ -1,0 +1,51 @@
+@startuml
+!include estilo.iuml
+skinparam defaultFontSize 15
+autonumber "<b>0."
+actor "Administrador de BD" as U
+box "Streamlit Community Cloud" #FBFAFF
+participant ":2_Verificacion" as P
+participant ":ControladorVerificacion" as C
+participant ":VerificadorBatch" as V
+participant ":MotorReglas" as MR
+participant "get_adapter()" as F
+participant ":GestorConexiones" as G
+participant ":MongoAdapter" as AD
+participant ":LogAuditoria" as L
+end box
+database "Supabase" as S
+database "MongoDB Atlas" as DB
+U -> P : Iniciar Escaneo
+P -> C : ejecutar_verificacion_batch()
+C -> V : ejecutar_verificacion()
+V -> MR : obtener_reglas()
+MR -> S : select reglas
+S --> MR : reglas
+MR --> V : reglas
+loop por cada regla
+  V -> V : _adaptador(motor)
+  alt primera vez para el motor
+    V -> F : get_adapter(motor, usuario)
+    F -> G : obtener_conexion(motor)
+    G -> S : select conexión
+    S --> G : {_cifrado: token}
+    G -> G : Fernet.decrypt()
+    G --> F : config
+    F -> AD ** : MongoAdapter(config)
+    F --> V : adaptador
+  end
+  V -> AD : obtener_todos(colección)
+  AD -> DB : find({})
+  DB --> AD : documentos
+  AD --> V : registros
+  V -> V : _verificar_<tipo>()
+  V -> L : limpiar_regla(regla_id)
+  L -> S : delete auditoría
+  V -> L : registrar_violaciones(violaciones)
+  L -> S : insert auditoría
+end
+V -> AD : cerrar()
+V --> C : violaciones
+C --> P : (violaciones, errores)
+P --> U : «Se detectaron N anomalías»
+@enduml

@@ -1,0 +1,44 @@
+@startuml
+!include estilo.iuml
+|Usuario|
+start
+:Iniciar sesión;
+|Sistema|
+if (¿Credenciales válidas?) then (no)
+  |Usuario|
+  :Ver error;
+  stop
+endif
+|Sistema|
+:Cargar espacio de trabajo;
+|Usuario|
+:Registrar conexiones\na los motores;
+|Sistema|
+:Probar conexión y guardar\ncifrada en Supabase;
+|Usuario|
+:Definir reglas de integridad;
+fork
+  |Usuario|
+  :Validar un registro\nantes de escribirlo;
+  |Sistema|
+  :Evaluar esquema y unicidad;
+  :Mostrar resultado;
+fork again
+  |Usuario|
+  :Ejecutar escaneo por lotes;
+  |Sistema|
+  :Leer datos de MongoDB,\nRedis y Cassandra;
+  :Evaluar las cuatro\nreglas de integridad;
+  :Registrar violaciones\nen la auditoría;
+end fork
+|Usuario|
+:Consultar dashboard y monitor;
+:Revisar reporte de anomalías;
+if (¿Exportar?) then (sí)
+  |Sistema|
+  :Generar PDF;
+endif
+|Usuario|
+:Corregir los datos en los motores;
+stop
+@enduml

@@ -1,0 +1,22 @@
+@startuml
+!include estilo.iuml
+autonumber
+actor "Analista de calidad" as A
+boundary "Página Reglas" as UI
+control "Controlador\nde reglas" as C
+entity "Regla" as R
+database Supabase
+A -> UI : completar tipo, origen, destino o JSON Schema
+UI -> UI : validar campos obligatorios
+alt datos completos
+  UI -> C : crear_regla(regla)
+  C -> R : crear(regla con usuario)
+  R -> Supabase : insertar en reglas
+  Supabase --> R : regla creada
+  R --> C : regla
+  C --> UI : regla
+  UI --> A : mostrar en «Reglas Activas»
+else faltan datos
+  UI --> A : indicar campos faltantes
+end
+@enduml

@@ -1,0 +1,25 @@
+@startuml
+!include estilo.iuml
+autonumber
+actor Visitante
+boundary "Pantalla de acceso" as UI
+control "Controlador de\nautenticación" as C
+entity "Usuario" as E
+database Supabase
+Visitante -> UI : ingresar usuario y contraseña
+UI -> C : login(usuario, contraseña)
+C -> E : verificar credenciales
+E -> Supabase : buscar usuario (sin distinguir mayúsculas)
+Supabase --> E : candidatos
+E -> E : comparar hash bcrypt
+alt credenciales válidas
+  E -> Supabase : actualizar último acceso
+  E --> C : éxito, usuario registrado
+  C --> UI : éxito
+  UI --> Visitante : mostrar Dashboard
+else credenciales inválidas
+  E --> C : error
+  C --> UI : error
+  UI --> Visitante : «Usuario o contraseña incorrectos»
+end
+@enduml

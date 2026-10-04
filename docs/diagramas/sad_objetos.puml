@@ -1,0 +1,58 @@
+@startuml
+!include estilo.iuml
+!pragma layout smetana
+object "keyla : Usuario" as u {
+  usuario = "Keyla"
+}
+object "cxMongo : Conexion" as c1 {
+  motor = "mongodb"
+  config = {_cifrado: "gAAAA..."}
+}
+object "cxRedis : Conexion" as c2 {
+  motor = "redis"
+}
+object "cxCassandra : Conexion" as c3 {
+  motor = "cassandra"
+}
+object "r1 : ReglaUnicidad" as r1 {
+  motorOrigen = "mongodb"
+  coleccionOrigen = "usuarios"
+  campo = "email"
+}
+object "r2 : ReglaReferencial" as r2 {
+  motorOrigen = "cassandra"
+  coleccionOrigen = "pagos"
+  campo = "pedido_id"
+  motorDestino = "mongodb"
+  coleccionDestino = "pedidos"
+  campoDestino = "_id"
+}
+object "r3 : ReglaConsistencia" as r3 {
+  motorOrigen = "mongodb"
+  coleccionOrigen = "usuarios"
+  motorDestino = "redis"
+  campoDestino = "_id"
+}
+object "v1 : Violacion" as v1 {
+  tipo = "unicidad"
+  datoAfectado = {_id: "U004"}
+}
+object "v2 : Violacion" as v2 {
+  tipo = "referencial"
+  datoAfectado = {id: "PA3"}
+}
+object "v3 : Violacion" as v3 {
+  tipo = "consistencia"
+  datoAfectado = {_id: "U001",
+   edad: 28 ≠ 29}
+}
+u --> c1
+u --> c2
+u --> c3
+u --> r1
+u --> r2
+u --> r3
+r1 --> v1
+r2 --> v2
+r3 --> v3
+@enduml
