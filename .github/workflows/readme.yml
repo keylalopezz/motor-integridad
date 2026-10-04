@@ -1,0 +1,35 @@
+# Genera la documentación del README.md (diccionario de datos, diagramas ER, de clases,
+# de componentes y de despliegue) a partir del código y de los changelogs de Liquibase.
+name: Documentación del README
+
+on:
+  push:
+    branches: [main]
+    paths: ["modelo/**", "controlador/**", "vista/**", "liquibase/**", "scripts/generar_readme.py", ".github/workflows/readme.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  readme:
+    name: Generar README.md
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python scripts/generar_readme.py
+      - name: Guardar cambios
+        run: |
+          if git diff --quiet README.md; then
+            echo "README.md ya está actualizado." >> $GITHUB_STEP_SUMMARY
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add README.md
+            git commit -m "Actualizar documentación del README [skip ci]"
+            git push
+            echo "README.md regenerado y publicado." >> $GITHUB_STEP_SUMMARY
+          fi

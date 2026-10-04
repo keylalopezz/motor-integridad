@@ -24,6 +24,7 @@ nav:
       - Instalación y configuración: instalacion.md
       - Despliegue y automatización: despliegue.md
       - Pruebas: pruebas.md
+      - Operaciones automatizadas: operaciones.md
   - Manual de usuario: usuario.md
   - Diagramas: diagramas.md
   - Referencia del código (API): api/index.html
