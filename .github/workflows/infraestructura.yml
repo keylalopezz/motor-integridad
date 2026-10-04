@@ -33,8 +33,7 @@ jobs:
       - name: Formato, inicialización y validación
         shell: bash
         run: |
-          paso() { salida=$("$@" 2>&1); c=$?; echo "$salida"; [ $c -eq 0 ] || { echo "::error title=$1 $2::$(echo "$salida" | tr '
-' ' ' | cut -c1-1500)"; exit $c; }; }
+          paso() { salida=$("$@" 2>&1); c=$?; echo "$salida"; [ $c -eq 0 ] || { echo "::error title=$1 $2::$(echo "$salida" | tr -s '[:space:]' ' ' | cut -c1-1500)"; exit $c; }; }
           paso terraform fmt -check -recursive -diff -no-color
           paso terraform init -backend=false -input=false -no-color
           paso terraform validate -no-color
@@ -43,8 +42,7 @@ jobs:
         run: |
           terraform test -verbose -no-color > ../terraform_test.txt 2>&1; c=$?
           cat ../terraform_test.txt
-          [ $c -eq 0 ] || echo "::error title=terraform test::$(grep -E 'Error|fail' -A3 ../terraform_test.txt | tr '
-' ' ' | cut -c1-1500)"
+          [ $c -eq 0 ] || echo "::error title=terraform test::$(grep -E 'Error|fail' -A3 ../terraform_test.txt | tr -s '[:space:]' ' ' | cut -c1-1500)"
           exit $c
       - name: Reportes de pruebas y costos
         if: always()
