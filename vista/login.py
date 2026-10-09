@@ -33,8 +33,8 @@ with col2:
                 st.warning("Completa ambos campos.")
                     
     with tab2:
-        st.markdown("### Crea tu Tenant")
-        user_reg = st.text_input("Nuevo Usuario (Tenant ID)", help="3 a 30 caracteres: letras, números, guion o guion bajo.")
+        st.markdown("### Crea tu cuenta")
+        user_reg = st.text_input("Nombre de usuario", help="3 a 30 caracteres: letras, números, guion o guion bajo.")
         pass_reg = st.text_input("Nueva Contraseña", type="password", help="Mínimo 6 caracteres.")
         submit_reg = st.button("Registrarse", width="stretch")
         
