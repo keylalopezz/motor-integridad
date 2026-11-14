@@ -1,0 +1,47 @@
+# Empaquetado del Motor de Integridad para instalar la CLI ``motor``:
+#   pip install .                                   (desde el repositorio clonado)
+#   pip install "git+https://github.com/<propietario>/<repositorio>.git"
+# La aplicación web se sigue ejecutando con ``streamlit run vista/app.py`` y requirements.txt.
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "motor-integridad"
+version = "2.0.0"
+description = "Motor de Integridad Multibase NoSQL: reglas de esquema, unicidad, integridad referencial y consistencia sobre MongoDB, Redis y Cassandra"
+readme = "README_APP.md"
+requires-python = ">=3.10"
+authors = [
+  { name = "Keyla Noelia Lopez Ojeda" },
+  { name = "Adrian Fabricio Salas Acuña" },
+]
+dependencies = [
+  "supabase>=2.4",
+  "pymongo>=4.6",
+  "redis>=5.0",
+  "cassandra-driver>=3.29",
+  "pyasyncore; python_version >= '3.12'",
+  "jsonschema>=4.21",
+  "python-dotenv>=1.0",
+  "bcrypt>=4.1",
+  "cryptography>=42",
+  "openpyxl>=3.1",
+]
+
+[project.optional-dependencies]
+web = ["streamlit>=1.50", "pandas>=2.0", "fpdf2>=2.7"]
+test = ["pytest>=8.0"]
+
+[project.scripts]
+motor = "motor_cli.main:main"
+
+[tool.setuptools]
+packages = ["modelo", "modelo.adaptadores", "modelo.integraciones", "controlador", "motor_cli"]
+
+[tool.setuptools.package-data]
+motor_cli = ["datos/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
