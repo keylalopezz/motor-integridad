@@ -21,6 +21,8 @@ El sistema sigue el patrón **MVC (Modelo-Vista-Controlador)**:
 4. **Integridad Referencial Inter-Base**: Asegura que una referencia en un motor (ej. Cassandra) exista en otro motor (ej. MongoDB).
 5. **Consistencia de Datos**: Detecta desincronizaciones entre datos replicados en distintos motores.
 6. **Dashboard de Auditoría**: Visualiza todas las violaciones de integridad detectadas en tiempo real.
+7. **Integraciones**: CLI `motor` para la terminal y la automatización, reporte en **Excel (Office)** e **Issues de GitHub** con las anomalías.
+8. **No funcionales**: sesiones con expiración por inactividad, historial de escaneos, caché por usuario, logs (visor en Monitor) y telemetría de uso y rendimiento.
 
 ## Requisitos Previos
 
@@ -108,6 +110,18 @@ Los informes del proyecto (Semana 1, FD01 Factibilidad, FD02 Visión, FD03 SRS y
 4. **Verificación**: Ejecuta el validador para detectar inconsistencias en tus datos en la nube.
 5. **Dashboard**: Revisa el reporte de las violaciones de integridad detectadas.
 
+## CLI `motor`
+
+```bash
+pip install .                 # o: pip install "git+https://github.com/keylalopezz/motor-integridad.git"
+motor --help
+motor demo --excel reporte.xlsx                                            # sin cuenta ni bases de datos
+motor validar ejemplos/registro_invalido.json --esquema ejemplos/esquema_usuario.json
+motor escanear --usuario tu_usuario --excel reporte.xlsx --github-issue     # usa el .env
+```
+
+Guía completa: `manual/integraciones.md` (publicada en GitHub Pages).
+
 ## Estructura del Proyecto
 
 ```text
@@ -123,7 +137,10 @@ motor-integridad/
 ├── scripts/            # Generación automática de la documentación
 ├── .github/workflows/  # Pruebas y documentación en GitHub Actions
 ├── README.md           # Documentación del proyecto
-├── modelo/             # Lógica de negocio, adaptadores y motor
+├── modelo/             # Lógica de negocio, adaptadores, integraciones (Excel, GitHub) y logs
 ├── controlador/        # Orquestadores entre Vista y Modelo
+├── motor_cli/          # CLI `motor` (validar, reglas, escanear, reporte, demo)
+├── ejemplos/           # Esquema y registros de ejemplo para la CLI
+├── pyproject.toml      # Paquete instalable con pip (comando `motor`)
 └── vista/              # Interfaz gráfica en Streamlit
 ```

@@ -3,7 +3,11 @@
 .streamlit/secrets.toml
 CREDENCIALES.txt
 
+# Logs de la aplicación (modelo/registro_logs.py)
+logs/
+
 # Python
+*.egg-info/
 __pycache__/
 *.pyc
 .venv/

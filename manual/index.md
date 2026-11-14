@@ -21,6 +21,7 @@ bases de datos NoSQL que no las soportan de forma nativa: **MongoDB**, **Redis**
 | [Instalación y configuración](instalacion.md) | Requisitos, variables de entorno, Supabase y ejecución local |
 | [Despliegue y automatización](despliegue.md) | Streamlit Community Cloud y el flujo de GitHub Actions |
 | [Pruebas](pruebas.md) | Pruebas unitarias y conjunto de datos de prueba |
+| [Integraciones y CLI](integraciones.md) | CLI `motor`, reporte Excel (Office), Issues de GitHub, sesiones, caché, logs y telemetría |
 | [Manual de usuario](usuario.md) | Uso de cada módulo de la aplicación |
 | [Diagramas](diagramas.md) | Diagramas UML del SRS y del SAD, y los extraídos del código |
 | [Referencia del código](api/index.html) | Clases y funciones de `modelo` y `controlador` |

@@ -5,6 +5,8 @@
 [![Base de datos (Liquibase)](https://github.com/keylalopezz/motor-integridad/actions/workflows/liquibase.yml/badge.svg)](https://github.com/keylalopezz/motor-integridad/actions/workflows/liquibase.yml)
 [![Copias de seguridad](https://github.com/keylalopezz/motor-integridad/actions/workflows/respaldo.yml/badge.svg)](https://github.com/keylalopezz/motor-integridad/actions/workflows/respaldo.yml)
 [![Release y despliegue](https://github.com/keylalopezz/motor-integridad/actions/workflows/release.yml/badge.svg)](https://github.com/keylalopezz/motor-integridad/actions/workflows/release.yml)
+[![Integraciones](https://github.com/keylalopezz/motor-integridad/actions/workflows/integraciones.yml/badge.svg)](https://github.com/keylalopezz/motor-integridad/actions/workflows/integraciones.yml)
+[![Mantener activos los servicios](https://github.com/keylalopezz/motor-integridad/actions/workflows/mantener-activo.yml/badge.svg)](https://github.com/keylalopezz/motor-integridad/actions/workflows/mantener-activo.yml)
 
 Plataforma web que define y aplica reglas de integridad (esquema, unicidad, integridad referencial y
 consistencia) sobre bases de datos NoSQL heterogéneas: **MongoDB Atlas**, **Redis (Upstash)** y
@@ -19,6 +21,32 @@ consistencia) sobre bases de datos NoSQL heterogéneas: **MongoDB Atlas**, **Red
 | Docente | Ing. Patrick José Cuadros Quiroga |
 | Integrantes | Keyla Noelia Lopez Ojeda (2023078690) · Adrian Fabricio Salas Acuña (2021069829) |
 
+> **¿La aplicación aparece dormida?** Los planes gratuitos de Streamlit duermen las apps sin visitas. Pulsa
+> **«Yes, get this app back up!»** y estará disponible en alrededor de un minuto. El flujo `mantener-activo.yml`
+> la visita cada 4 horas, junto con Supabase y los tres motores, para evitarlo.
+
+## Integraciones (reto) y CLI
+
+El motor se integra con **tres herramientas**: una **CLI** (`motor`), **Microsoft Office** (reporte Excel) y
+**GitHub** (Issues con las anomalías). Para probarlo sin cuentas ni bases de datos:
+
+```bash
+pip install "git+https://github.com/keylalopezz/motor-integridad.git"
+motor demo --excel reporte.xlsx        # detecta las 7 violaciones del conjunto de prueba y genera el Excel
+motor validar ejemplos/registros_lote.json --esquema ejemplos/esquema_usuario.json
+motor --help
+```
+
+| Integración | Evidencia en el repositorio |
+|---|---|
+| CLI `motor` (`motor_cli/`) | `motor --help`; flujo `integraciones.yml` (instala con `pip` y ejecuta los comandos) |
+| Office · Excel (`modelo/integraciones/excel.py`) | Botón *Descargar Excel* en Reportes; artefacto `reportes-integraciones` del flujo |
+| GitHub · Issues (`modelo/integraciones/github_issues.py`) | Pestaña **Issues** (etiqueta `integridad-de-datos`), creados por la app, la CLI o el flujo |
+
+**Características no funcionales:** sesiones con expiración por inactividad, historial de escaneos y de auditoría,
+caché por usuario (`st.cache_data`), logs con `logging` (visor en *Monitor*) y telemetría de uso y rendimiento
+(Dashboard). Detalle completo en el manual: *Integraciones, CLI y no funcionales*.
+
 ## Automatizaciones (GitHub Actions)
 
 | Flujo | Qué hace | Reporte |
@@ -29,9 +57,12 @@ consistencia) sobre bases de datos NoSQL heterogéneas: **MongoDB Atlas**, **Red
 | `liquibase.yml` | Crea/actualiza los objetos de la base de datos con Liquibase | `reporte-liquibase` |
 | `respaldo.yml` | Copia de seguridad semanal cifrada de Supabase, MongoDB, Redis y Cassandra | `respaldo-N` (30 días) |
 | `release.yml` | Con una etiqueta `vX.Y.Z`: pruebas, Release con el paquete, migración y despliegue verificado | Release de GitHub |
+| `integraciones.yml` | Instala la CLI con `pip`, valida registros, escanea el conjunto de prueba, genera el Excel y crea el Issue | `reportes-integraciones` + Issue |
+| `mantener-activo.yml` | Cada 4 horas: consulta Supabase, hace ping a MongoDB, Redis y Cassandra y despierta la app | `reporte-mantener-activo-N` |
 
 Secretos usados (Settings → Secrets and variables → Actions): `SUPABASE_URL`, `SUPABASE_KEY`,
-`ENCRYPTION_KEY` (respaldos), `LIQUIBASE_URL`, `LIQUIBASE_USERNAME`, `LIQUIBASE_PASSWORD` (migraciones) y,
+`ENCRYPTION_KEY` (respaldos y mantener activo), `MOTOR_USUARIO` y `MOTOR_PASSWORD` (cuenta para el escaneo real
+y para mantener activas sus conexiones), `LIQUIBASE_URL`, `LIQUIBASE_USERNAME`, `LIQUIBASE_PASSWORD` (migraciones) y,
 solo para aprovisionar con Terraform, las claves de Supabase, Atlas, Upstash y Astra (ver `infra/`).
 
 Instalación y uso de la aplicación: [README_APP.md](README_APP.md).
@@ -185,6 +216,7 @@ classDiagram
         -auth
         +registrar(usuario, password)
         +login(usuario, password)
+        +cerrar_sesion(usuario, motivo, duracion_min)
         +actualizar_actividad(usuario)
         +obtener_usuarios_activos(minutos)
     }
@@ -201,6 +233,7 @@ classDiagram
     }
     class ControladorVerificacion {
         -metricas
+        -origen
         -validador
         -verificador
         +validar_insercion(motor, coleccion, registro)
@@ -231,6 +264,17 @@ classDiagram
         +contar_duplicados(coleccion, campo, valor)
         +obtener_todos(coleccion)
         +cerrar()
+    }
+    class MemoriaAdapter {
+        -colecciones
+        -nombre
+        +existe(coleccion, campo, valor)
+        +obtener(coleccion, filtro)
+        +contar_duplicados(coleccion, campo, valor)
+        +obtener_todos(coleccion)
+        +verificar_salud()
+        +listar_recursos()
+        +obtener_muestra(coleccion, limite)
     }
     class MongoAdapter {
         -client
@@ -273,6 +317,17 @@ classDiagram
         +motores_configurados()
         +eliminar_conexion(motor)
     }
+    class ErrorGitHub {
+        -codigo
+    }
+    class IntegracionGitHub {
+        -api
+        -repo
+        -timeout
+        -token
+        +verificar()
+        +crear_issue(titulo, cuerpo, etiquetas)
+    }
     class LogAuditoria {
         -supabase
         -usuario
@@ -286,6 +341,7 @@ classDiagram
         -usuario
         +registrar(accion, detalle)
         +obtener_eventos(dias, todos)
+        +obtener_historial(accion, limite)
     }
     class MotorReglas {
         -supabase
@@ -294,6 +350,10 @@ classDiagram
         +obtener_reglas(filtros)
         +actualizar_regla(regla_id, datos)
         +eliminar_regla(regla_id)
+    }
+    class BuferMemoria {
+        -registros
+        +emit(record)
     }
     class SupabaseClient {
         +get_client()
@@ -305,7 +365,9 @@ classDiagram
     }
     class VerificadorBatch {
         -_adaptadores
+        -_fabrica
         -auditoria
+        -duracion_ms
         -errores
         -motor_reglas
         -usuario
@@ -313,6 +375,7 @@ classDiagram
     }
     ABC <|-- Adaptador
     Adaptador <|-- CassandraAdapter
+    Adaptador <|-- MemoriaAdapter
     Adaptador <|-- MongoAdapter
     Adaptador <|-- RedisAdapter
     Autenticacion --> SupabaseClient
@@ -325,7 +388,9 @@ classDiagram
     ControladorVerificacion --> MetricasUso
     ControladorVerificacion --> Validador
     ControladorVerificacion --> VerificadorBatch
+    Exception <|-- ErrorGitHub
     GestorConexiones --> SupabaseClient
+    IntegracionGitHub --> ErrorGitHub
     LogAuditoria --> SupabaseClient
     MetricasUso --> SupabaseClient
     MongoAdapter --> MongoClient
