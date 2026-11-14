@@ -6,6 +6,8 @@ import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from modelo.gestor_conexiones import GestorConexiones
 from modelo.adaptadores import MongoAdapter, RedisAdapter, CassandraAdapter
+from modelo.integraciones.github_issues import ErrorGitHub, IntegracionGitHub
+from vista import cache
 
 usuario = st.session_state.get("usuario")
 gestor = GestorConexiones(usuario)
@@ -48,6 +50,7 @@ def probar_y_guardar(motor: str, clase_adaptador, config: dict, probar_solo: boo
                 pass
     if not probar_solo:
         gestor.guardar_conexion(motor, config)
+        cache.invalidar()
         st.switch_page("rutas/5_Monitor.py")
 
 
@@ -59,11 +62,13 @@ def botones(motor: str, clase_adaptador, config: dict):
         probar_y_guardar(motor, clase_adaptador, config, probar_solo=False)
     if motor in configurados and st.button("🗑️ Eliminar conexión guardada", width="stretch", key=f"borrar_{motor}"):
         gestor.eliminar_conexion(motor)
+        cache.invalidar()
         st.rerun()
 
 
 # Usamos st.selectbox para que sea un combo box desplegable como pidió el usuario
-opciones_motores = ["-- Seleccionar motor --", "MongoDB (Atlas)", "Redis (Upstash)", "Cassandra (Astra DB)"]
+opciones_motores = ["-- Seleccionar motor --", "MongoDB (Atlas)", "Redis (Upstash)", "Cassandra (Astra DB)",
+                    "GitHub (integración)"]
 seleccionado = st.selectbox("Base de datos a conectar", opciones_motores)
 
 st.divider()
@@ -173,3 +178,47 @@ else:
                     botones("cassandra", CassandraAdapter, config)
                 else:
                     st.caption("Completa el keyspace y las credenciales.")
+
+        elif seleccionado == "GitHub (integración)":
+            with st.container(border=True):
+                st.markdown("### 🐙 Integración con GitHub")
+                st.caption("Publica las anomalías de tus escaneos como Issues de un repositorio, para gestionarlas "
+                           "como tareas del equipo (página Reportes y comando `motor escanear --github-issue`).")
+
+                with st.expander("📖 ¿Cómo obtengo el token? (Guía rápida)"):
+                    st.markdown("""
+                    1. En GitHub: **Settings → Developer settings → Personal access tokens → Fine-grained tokens**.
+                    2. **Generate new token**, elige el repositorio en *Repository access*.
+                    3. En *Permissions → Repository permissions*, da **Issues: Read and write**.
+                    4. Copia el token (empieza por `github_pat_`) y pégalo abajo. Se guarda cifrado con Fernet.
+                    """)
+
+                config_gh = conexion_guardada("github")
+                repo = st.text_input("Repositorio (propietario/nombre)", value=config_gh.get("GITHUB_REPO", ""),
+                                     placeholder="keylalopezz/motor-integridad")
+                token = st.text_input("Token de acceso", type="password",
+                                      placeholder="(guardado; escribe uno nuevo para reemplazarlo)" if config_gh else "github_pat_...")
+                token = token.strip() or config_gh.get("GITHUB_TOKEN", "")
+
+                b1, b2 = st.columns(2)
+                for boton, guardar in ((b1.button("🔌 Probar acceso", width="stretch", key="probar_github"), False),
+                                       (b2.button("💾 Probar y guardar", type="primary", width="stretch", key="guardar_github"), True)):
+                    if not boton:
+                        continue
+                    try:
+                        with st.spinner("Verificando el acceso a GitHub..."):
+                            info = IntegracionGitHub(token, repo).verificar()
+                        if not info["issues"]:
+                            st.warning(f"⚠️ {info['nombre']} tiene los Issues desactivados (Settings → Features → Issues).")
+                        st.success(f"✅ Acceso correcto a {info['nombre']}.")
+                        if guardar:
+                            gestor.guardar_conexion("github", {"GITHUB_TOKEN": token, "GITHUB_REPO": info["nombre"]})
+                            cache.invalidar()
+                            st.success("💾 Integración guardada. Ya puedes crear Issues desde la página Reportes.")
+                    except ErrorGitHub as e:
+                        st.error(f"❌ {e}")
+
+                if config_gh and st.button("🗑️ Eliminar integración guardada", width="stretch", key="borrar_github"):
+                    gestor.eliminar_conexion("github")
+                    cache.invalidar()
+                    st.rerun()
