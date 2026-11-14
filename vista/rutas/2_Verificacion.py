@@ -5,6 +5,9 @@ import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from controlador.controlador_verificacion import ControladorVerificacion
+from modelo.integraciones.github_issues import ErrorGitHub, publicar_anomalias
+from modelo.metricas_uso import MetricasUso
+from vista import cache
 
 st.title("🚀 Centro de Ejecución")
 
@@ -43,16 +46,41 @@ with col2:
         st.markdown("Ejecuta un escaneo profundo inter-bases para detectar huérfanos y desincronizaciones.")
         
         st.info("Dependiendo del volumen de datos en la nube, esto puede tomar unos segundos.")
-        
+        repo_github = cache.github_configurado(usuario)
+        crear_issue = st.checkbox(f"Publicar el resultado como Issue en {repo_github}", value=False) if repo_github else False
+
         if st.button("Iniciar Escaneo Profundo", type="primary", width="stretch"):
             with st.spinner("Conectando con motores y escaneando datos..."):
                 try:
                     violaciones, errores = controlador.ejecutar_verificacion_batch()
+                    cache.invalidar()
+                    st.caption(f"⏱️ Escaneo completado en {controlador.verificador.duracion_ms / 1000:.1f} s.")
                     for err in errores:
                         st.error(f"⚠️ {err}")
                     if violaciones:
                         st.warning(f"⚠️ Se detectaron {len(violaciones)} anomalías en tus bases de datos.")
                     elif not errores:
                         st.success("✨ Escaneo finalizado. Bases de datos íntegras.")
+                    if crear_issue:
+                        try:
+                            issue = publicar_anomalias(violaciones, errores, usuario=usuario, origen="Aplicación web · escaneo")
+                            MetricasUso(usuario).registrar("issue_github", {"anomalias": len(violaciones), "issue": issue["numero"]})
+                            st.success(f"🐙 Issue #{issue['numero']} creado: {issue['url']}")
+                        except ErrorGitHub as e:
+                            st.error(f"❌ GitHub: {e}")
                 except Exception as e:
                     st.error(f"Error en ejecución: {e}")
+
+st.divider()
+st.subheader("🕑 Historial de escaneos")
+historial = cache.historial(usuario, "escaneo", 15)
+if not historial:
+    st.caption("Aún no hay escaneos registrados.")
+else:
+    st.dataframe([{
+        "Fecha (UTC)": str(h.get("creado_en", ""))[:19].replace("T", " "),
+        "Origen": (h.get("detalle") or {}).get("origen", "web").upper(),
+        "Anomalías": (h.get("detalle") or {}).get("anomalias", 0),
+        "Reglas con error": (h.get("detalle") or {}).get("errores", 0),
+        "Duración (s)": round(((h.get("detalle") or {}).get("duracion_ms") or 0) / 1000, 2),
+    } for h in historial], width="stretch", hide_index=True)

@@ -6,6 +6,7 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(
 from modelo.gestor_conexiones import GestorConexiones
 from modelo.adaptadores import get_adapter
 from modelo.motor_reglas import MotorReglas
+from modelo.registro_logs import registros_recientes
 from datetime import datetime
 
 usuario = st.session_state.get("usuario")
@@ -321,3 +322,18 @@ if resultado and resultado["motor"] == motor_monitor:
                 st.info("No hay reglas de integridad configuradas actualmente para este motor.")
         except Exception as error:
             st.warning(f"No se pudieron cargar las reglas: {error}")
+
+st.divider()
+st.subheader("📜 Logs de tu actividad")
+st.caption("Eventos registrados por el módulo de logs (inicios de sesión, reglas, conexiones, escaneos e integraciones). "
+           "Se muestran solo los de tu cuenta; la consola del servidor y el archivo `logs/motor.log` guardan el registro completo.")
+c_log1, c_log2 = st.columns([1, 3])
+niveles = c_log1.multiselect("Nivel", ["INFO", "WARNING", "ERROR"], default=["INFO", "WARNING", "ERROR"])
+if c_log2.button("🔄 Actualizar logs"):
+    st.rerun()
+registros = [r for r in registros_recientes(usuario, limite=200) if r["nivel"] in niveles]
+if registros:
+    st.dataframe([{"Fecha": r["fecha"], "Nivel": r["nivel"], "Módulo": r["modulo"].removeprefix("motor."),
+                   "Mensaje": r["mensaje"]} for r in registros], width="stretch", hide_index=True)
+else:
+    st.info("Aún no hay eventos registrados en esta sesión del servidor.")
