@@ -1,0 +1,48 @@
+# Mantiene activos los servicios gratuitos que se suspenden por inactividad:
+# Supabase, MongoDB Atlas, Upstash Redis, DataStax Astra (Cassandra) y la app en Streamlit Community Cloud.
+# Si un servicio no responde, el flujo falla y GitHub avisa por correo para reactivarlo desde su panel.
+# Secretos: SUPABASE_URL, SUPABASE_KEY, ENCRYPTION_KEY (los mismos de los respaldos) y, opcional,
+# MOTOR_USUARIO (cuenta cuyas conexiones se mantienen activas; sin él, se revisan todas).
+name: Mantener activos los servicios
+
+on:
+  schedule:
+    - cron: "17 */4 * * *"   # cada 4 horas
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mantener-activo
+  cancel-in-progress: false
+
+jobs:
+  mantener:
+    name: Ping a bases de datos y app
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Instalar dependencias y navegador
+        run: |
+          pip install -r requirements.txt playwright
+          python -m playwright install --with-deps chromium
+      - name: Consultar servicios y despertar la app
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+          MOTOR_USUARIO: ${{ secrets.MOTOR_USUARIO }}
+          APP_URL: https://motor-integridad.streamlit.app
+        run: python scripts/mantener_activo.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reporte-mantener-activo-${{ github.run_number }}
+          path: build/mantener_activo
+          retention-days: 7
