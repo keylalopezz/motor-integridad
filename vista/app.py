@@ -1,10 +1,12 @@
 import streamlit as st
 import sys
 import os
+import time
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from modelo.supabase_client import SupabaseClient
 from controlador.controlador_auth import ControladorAuth
+from modelo.supabase_client import obtener_config
 
 st.set_page_config(page_title="Motor de Integridad Multibase de Datos No SQL", page_icon="🛡️", layout="wide")
 
@@ -14,6 +16,22 @@ if not SupabaseClient().get_client():
 
 if "logged_in" not in st.session_state:
     st.session_state["logged_in"] = False
+
+# Sesión: expira tras SESION_MINUTOS sin actividad (30 por defecto)
+SESION_MINUTOS = int(obtener_config("SESION_MINUTOS", "30") or 30)
+
+
+def cerrar_sesion(motivo: str) -> None:
+    """Cierra la sesión, registrando el evento (``logout`` o ``sesion_expirada``) con su duración."""
+    usuario = st.session_state.get("usuario")
+    inicio = st.session_state.get("inicio_sesion", time.time())
+    if usuario:
+        ControladorAuth().cerrar_sesion(usuario, motivo, round((time.time() - inicio) / 60, 1))
+    for clave in list(st.session_state.keys()):
+        del st.session_state[clave]
+    st.session_state["logged_in"] = False
+    if motivo == "sesion_expirada":
+        st.session_state["aviso_sesion"] = f"⏱️ Tu sesión expiró tras {SESION_MINUTOS} minutos sin actividad. Vuelve a iniciar sesión."
 
 # CSS Premium (Glassmorphism, Google Fonts, Animaciones)
 st.markdown("""
@@ -93,20 +111,30 @@ reportes = st.Page("rutas/6_Reportes.py", title="Reportes", icon="📄")
 comunidad = st.Page("rutas/4_Comunidad.py", title="Comunidad", icon="🌍")
 
 if st.session_state["logged_in"]:
-    # Actualizar actividad
+    ahora = time.time()
+    ultima = st.session_state.get("ultima_interaccion", ahora)
+    if ahora - ultima > SESION_MINUTOS * 60:
+        cerrar_sesion("sesion_expirada")
+        st.rerun()
+    st.session_state["ultima_interaccion"] = ahora
+    st.session_state.setdefault("inicio_sesion", ahora)
+
+    # Actividad para «Comunidad»: como máximo una escritura por minuto en Supabase
     usuario_actual = st.session_state.get('usuario')
-    if usuario_actual:
+    if usuario_actual and ahora - st.session_state.get("actividad_guardada", 0) > 60:
         ControladorAuth().actualizar_actividad(usuario_actual)
+        st.session_state["actividad_guardada"] = ahora
 
     pg = st.navigation([dashboard, conexiones, monitor, reglas, verificacion, reportes, comunidad])
     
     st.sidebar.markdown(f"### 🛡️ Motor de Integridad Multibase de Datos No SQL")
     st.sidebar.markdown(f"**Workspace:** `{st.session_state.get('usuario')}`")
+    minutos = int((ahora - st.session_state["inicio_sesion"]) // 60)
+    st.sidebar.caption(f"🕑 Sesión activa hace {minutos} min · expira tras {SESION_MINUTOS} min sin actividad")
     st.sidebar.markdown("---")
-    
+
     if st.sidebar.button("Cerrar Sesión"):
-        st.session_state["logged_in"] = False
-        st.session_state["usuario"] = None
+        cerrar_sesion("logout")
         st.rerun()
 else:
     pg = st.navigation([login_page])

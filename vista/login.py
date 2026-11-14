@@ -1,6 +1,7 @@
 import streamlit as st
 import sys
 import os
+import time
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from controlador.controlador_auth import ControladorAuth
@@ -9,6 +10,9 @@ st.markdown("<h1 style='text-align: center; color: #f8fafc; font-size: 3rem;'>ü
 st.markdown("<p style='text-align: center; color: #94a3b8; font-size: 1.2rem; margin-bottom: 2rem;'>Tu motor de integridad cloud-native</p>", unsafe_allow_html=True)
 
 controlador = ControladorAuth()
+
+if "aviso_sesion" in st.session_state:
+    st.warning(st.session_state.pop("aviso_sesion"))
 
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
@@ -26,6 +30,8 @@ with col2:
                 if exito:
                     st.session_state["logged_in"] = True
                     st.session_state["usuario"] = usuario_registrado
+                    st.session_state["inicio_sesion"] = time.time()
+                    st.session_state["ultima_interaccion"] = time.time()
                     st.rerun()
                 else:
                     st.error(f"‚ùå {msj}")
