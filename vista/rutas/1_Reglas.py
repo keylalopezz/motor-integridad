@@ -5,6 +5,7 @@ import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 from controlador.controlador_reglas import ControladorReglas
+from vista import cache
 
 st.title("⚡ Reglas de Integridad")
 st.markdown("Define las restricciones estructurales, referenciales y de unicidad de tus bases de datos NoSQL.")
@@ -20,7 +21,7 @@ tab1, tab2 = st.tabs(["📋 Reglas Activas", "➕ Crear Nueva Regla"])
 
 with tab1:
     try:
-        reglas = controlador.obtener_reglas()
+        reglas = cache.reglas(usuario)
         if reglas:
             for r in reglas:
                 tipo_color = {"esquema": "blue", "unicidad": "green", "referencial": "orange", "consistencia": "red"}.get(r['tipo'], "gray")
@@ -33,6 +34,7 @@ with tab1:
                     
                     if st.button("🗑️ Eliminar", key=f"del_{r['id']}"):
                         controlador.eliminar_regla(r['id'])
+                        cache.invalidar()
                         st.session_state["reglas_aviso"] = "🗑️ Regla eliminada."
                         st.rerun()
         else:
@@ -98,12 +100,13 @@ with tab2:
             try:
                 duplicada = any(
                     all(r.get(k) == nueva_regla[k] for k in campos_clave) and (tipo != "esquema" or r.get("schema") == schema)
-                    for r in controlador.obtener_reglas()
+                    for r in cache.reglas(usuario)
                 )
                 if duplicada:
                     st.warning("⚠️ Ya existe una regla idéntica. No se guardó de nuevo.")
                 else:
                     controlador.crear_regla(nueva_regla)
+                    cache.invalidar()
                     st.session_state["reglas_aviso"] = f"✅ Política de {tipo} guardada sobre {motor_origen}.{coleccion_origen}."
                     st.rerun()
             except Exception as e:

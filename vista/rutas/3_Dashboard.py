@@ -3,10 +3,8 @@ import sys
 import os
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from controlador.controlador_reporte import ControladorReporte
-from modelo.gestor_conexiones import GestorConexiones
-from modelo.motor_reglas import MotorReglas
-from modelo.metricas_uso import MetricasUso, ACCIONES
+from modelo.metricas_uso import ACCIONES
+from vista import cache
 import pandas as pd
 
 st.title("📊 Dashboard General")
@@ -14,9 +12,9 @@ st.markdown("Métricas clave de uso del Motor de Integridad y salud de tus clús
 
 usuario = st.session_state.get("usuario")
 try:
-    violaciones = ControladorReporte(usuario).obtener_violaciones()
-    motores_usados = [m.capitalize() for m in GestorConexiones(usuario).motores_configurados()]
-    reglas = MotorReglas(usuario).obtener_reglas()
+    violaciones = cache.violaciones(usuario)
+    motores_usados = [m.capitalize() for m in cache.motores(usuario)]
+    reglas = cache.reglas(usuario)
 except Exception as e:
     st.error(f"❌ No se pudieron cargar los datos desde Supabase: {type(e).__name__}. Intenta recargar en unos segundos.")
     st.stop()
@@ -91,7 +89,7 @@ st.subheader("📈 Utilización del Producto")
 col_f1, col_f2 = st.columns([1, 1])
 dias = col_f1.selectbox("Periodo", [7, 30, 90], index=1, format_func=lambda d: f"Últimos {d} días")
 alcance = col_f2.radio("Alcance", ["Mi cuenta", "Toda la plataforma"], horizontal=True)
-eventos = MetricasUso(usuario).obtener_eventos(dias=dias, todos=alcance == "Toda la plataforma")
+eventos = cache.eventos(usuario, dias, alcance == "Toda la plataforma")
 
 if eventos is None:
     st.info("Las métricas de uso se activan al aplicar la migración `eventos_uso` (Liquibase, ver README).")
@@ -100,6 +98,10 @@ elif not eventos:
 else:
     df = pd.DataFrame(eventos)
     df["fecha"] = pd.to_datetime(df["creado_en"], utc=True, format="ISO8601").dt.date
+    detalle = df["detalle"] if "detalle" in df else pd.Series([{}] * len(df))
+    df["origen"] = detalle.map(lambda d: (d or {}).get("origen", "web") if isinstance(d, dict) else "web")
+    df["duracion_ms"] = detalle.map(lambda d: (d or {}).get("duracion_ms") if isinstance(d, dict) else None)
+    escaneos = df[df["accion"] == "escaneo"]
     df["accion"] = df["accion"].map(lambda a: ACCIONES.get(a, a))
 
     u1, u2, u3, u4 = st.columns(4)
@@ -118,6 +120,17 @@ else:
         with st.container(border=True):
             st.caption("Uso por funcionalidad")
             st.bar_chart(df["accion"].value_counts(), horizontal=True)
+    with st.container(border=True):
+        st.caption("Telemetría de rendimiento e integraciones")
+        t1, t2, t3, t4 = st.columns(4)
+        duraciones = pd.to_numeric(escaneos["duracion_ms"], errors="coerce").dropna()
+        t1.metric("Duración media del escaneo", f"{duraciones.mean() / 1000:.1f} s" if len(duraciones) else "N/D")
+        t2.metric("Acciones desde la CLI", int((df["origen"] == "cli").sum()))
+        t3.metric("Reportes exportados", int(df["accion"].isin([ACCIONES["reporte_pdf"], ACCIONES["reporte_excel"]]).sum()))
+        t4.metric("Issues creados en GitHub", int((df["accion"] == ACCIONES["issue_github"]).sum()))
+        if len(duraciones):
+            st.caption("Duración de los escaneos (segundos)")
+            st.line_chart((pd.Series(duraciones.values, index=escaneos.loc[duraciones.index, "creado_en"]) / 1000).rename("segundos"))
     if alcance == "Toda la plataforma":
         with st.container(border=True):
             st.caption("Usuarios con más actividad")
