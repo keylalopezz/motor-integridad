@@ -52,7 +52,9 @@ def respaldar_supabase(cliente, zf, filas):
 def respaldar_motores(cliente, zf, filas):
     """Exporta todos los recursos de los motores NoSQL guardados por cada usuario."""
     from modelo.adaptadores import get_adapter
-    conexiones = cliente.table("conexiones_motores").select("usuario, motor").execute().data or []
+    from modelo.gestor_conexiones import MOTORES_NOSQL
+    conexiones = [c for c in cliente.table("conexiones_motores").select("usuario, motor").execute().data or []
+                  if c["motor"] in MOTORES_NOSQL]
     for c in conexiones:
         usuario, motor = c["usuario"], c["motor"]
         adaptador = None
