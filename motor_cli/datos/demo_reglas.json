@@ -1,0 +1,22 @@
+[
+  {"id": "R1", "tipo": "esquema", "motor_origen": "mongodb", "coleccion_origen": "usuarios", "campo": "_id",
+   "descripcion": "Todo usuario de MongoDB debe tener nombre, email y una edad entera no negativa",
+   "schema": {"type": "object", "required": ["nombre", "email", "edad"],
+              "properties": {"email": {"type": "string"}, "edad": {"type": "integer", "minimum": 0}}}},
+  {"id": "R2", "tipo": "unicidad", "motor_origen": "mongodb", "coleccion_origen": "usuarios", "campo": "email",
+   "descripcion": "El email de los usuarios de MongoDB es único"},
+  {"id": "R3", "tipo": "referencial", "motor_origen": "mongodb", "coleccion_origen": "pedidos", "campo": "usuario_id",
+   "motor_destino": "mongodb", "coleccion_destino": "usuarios", "campo_destino": "_id",
+   "descripcion": "Cada pedido referencia a un usuario existente"},
+  {"id": "R4", "tipo": "consistencia", "motor_origen": "mongodb", "coleccion_origen": "usuarios", "campo": "_id",
+   "motor_destino": "redis", "coleccion_destino": "usuarios", "campo_destino": "_id",
+   "descripcion": "La copia de usuarios en Redis coincide con MongoDB"},
+  {"id": "R5", "tipo": "esquema", "motor_origen": "redis", "coleccion_origen": "usuarios", "campo": "_id",
+   "descripcion": "Todo usuario en la caché de Redis debe tener email",
+   "schema": {"type": "object", "required": ["email"]}},
+  {"id": "R6", "tipo": "referencial", "motor_origen": "cassandra", "coleccion_origen": "pagos", "campo": "pedido_id",
+   "motor_destino": "mongodb", "coleccion_destino": "pedidos", "campo_destino": "_id",
+   "descripcion": "Cada pago de Cassandra referencia un pedido existente en MongoDB"},
+  {"id": "R7", "tipo": "unicidad", "motor_origen": "cassandra", "coleccion_origen": "pagos", "campo": "transaccion",
+   "descripcion": "Una transacción no se cobra dos veces"}
+]

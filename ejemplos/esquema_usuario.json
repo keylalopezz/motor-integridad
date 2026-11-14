@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Usuario de la tienda (colección usuarios)",
+  "type": "object",
+  "required": ["_id", "nombre", "email", "edad"],
+  "properties": {
+    "_id": {"type": "string", "pattern": "^U[0-9]{3}$"},
+    "nombre": {"type": "string", "minLength": 1},
+    "email": {"type": "string", "pattern": "^[^@ ]+@[^@ ]+[.][^@ ]+$"},
+    "edad": {"type": "integer", "minimum": 0, "maximum": 120},
+    "estado": {"enum": ["activo", "inactivo"]}
+  }
+}

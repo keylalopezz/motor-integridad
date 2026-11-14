@@ -1,0 +1,31 @@
+{
+  "mongodb": {
+    "usuarios": [
+      {"_id": "U001", "nombre": "Ana Pérez", "email": "ana@email.com", "edad": 28, "estado": "activo"},
+      {"_id": "U002", "nombre": "Carlos Gómez", "email": "carlos@email.com", "edad": 35, "estado": "activo"},
+      {"_id": "U003", "nombre": "Usuario Sin Email", "edad": 40, "estado": "inactivo"},
+      {"_id": "U004", "nombre": "Clon de Ana", "email": "ana@email.com", "edad": 22, "estado": "activo"}
+    ],
+    "pedidos": [
+      {"_id": "P100", "usuario_id": "U001", "producto": "Laptop", "total": 1200.5},
+      {"_id": "P101", "usuario_id": "U002", "producto": "Mouse Inalámbrico", "total": 25.0},
+      {"_id": "P102", "usuario_id": "U999", "producto": "Teclado Mecánico", "total": 85.0}
+    ]
+  },
+  "redis": {
+    "usuarios": [
+      {"_id": "U001", "nombre": "Ana Pérez", "email": "ana@email.com", "edad": 29, "estado": "activo"},
+      {"_id": "U002", "nombre": "Carlos Gómez", "email": "carlos@email.com", "edad": 35, "estado": "activo"},
+      {"_id": "U003", "nombre": "Usuario Sin Email", "edad": 40, "estado": "inactivo"},
+      {"_id": "U004", "nombre": "Clon de Ana", "email": "ana@email.com", "edad": 22, "estado": "activo"}
+    ]
+  },
+  "cassandra": {
+    "pagos": [
+      {"id": "PA1", "pedido_id": "P100", "transaccion": "TX-1001", "monto": 1200.5, "metodo": "tarjeta"},
+      {"id": "PA2", "pedido_id": "P101", "transaccion": "TX-1002", "monto": 25.0, "metodo": "yape"},
+      {"id": "PA3", "pedido_id": "P999", "transaccion": "TX-1003", "monto": 85.0, "metodo": "tarjeta"},
+      {"id": "PA4", "pedido_id": "P100", "transaccion": "TX-1001", "monto": 1200.5, "metodo": "tarjeta"}
+    ]
+  }
+}

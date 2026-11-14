@@ -1,0 +1,5 @@
+[
+  {"_id": "U010", "nombre": "Lucía Ramos", "email": "lucia@email.com", "edad": 31, "estado": "activo"},
+  {"_id": "U011", "nombre": "Pedro Sin Correo", "edad": -5, "estado": "suspendido"},
+  {"_id": "U012", "nombre": "Rosa Díaz", "email": "rosa@email.com", "edad": "veinte"}
+]
