@@ -3,8 +3,10 @@
 import os
 from dotenv import load_dotenv
 from supabase import create_client, Client
+from .registro_logs import obtener_logger
 
 load_dotenv()
+log = obtener_logger("supabase")
 
 
 def obtener_config(nombre: str, defecto: str = "") -> str:
@@ -35,10 +37,10 @@ class SupabaseClient:
                     cls._instance.client: Client = create_client(url, key)
                 except Exception as e:
                     cls._instance.client = None
-                    print(f"Error al inicializar Supabase: {e}")
+                    log.error("Error al inicializar Supabase: %s", e)
             else:
                 cls._instance.client = None
-                print("Advertencia: No se encontraron credenciales de Supabase (.env o st.secrets)")
+                log.warning("No se encontraron credenciales de Supabase (.env o st.secrets)")
         return cls._instance
 
     def get_client(self) -> Client:

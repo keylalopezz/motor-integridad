@@ -2,6 +2,9 @@
 
 from typing import List, Dict, Optional
 from .supabase_client import SupabaseClient
+from .registro_logs import obtener_logger
+
+log = obtener_logger("reglas")
 
 class MotorReglas:
     """Crea, consulta, actualiza y elimina las reglas de un usuario."""
@@ -16,6 +19,8 @@ class MotorReglas:
             return {}
         regla['usuario'] = self.usuario
         response = self.supabase.table('reglas').insert(regla).execute()
+        log.info("Regla de %s creada sobre %s.%s", regla.get('tipo'), regla.get('motor_origen'),
+                 regla.get('coleccion_origen'), extra={"usuario": self.usuario})
         return response.data[0] if response.data else {}
 
     def obtener_reglas(self, filtros: Optional[Dict] = None) -> List[Dict]:
@@ -41,4 +46,5 @@ class MotorReglas:
         if not self.supabase:
             return False
         response = self.supabase.table('reglas').delete().eq('usuario', self.usuario).eq('id', regla_id).execute()
+        log.info("Regla %s eliminada", regla_id, extra={"usuario": self.usuario})
         return len(response.data) > 0

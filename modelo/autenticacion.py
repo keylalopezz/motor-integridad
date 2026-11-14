@@ -5,6 +5,9 @@ from datetime import datetime, timezone, timedelta
 import bcrypt
 from typing import Dict, Tuple, Optional
 from .supabase_client import SupabaseClient
+from .registro_logs import obtener_logger
+
+log = obtener_logger("autenticacion")
 
 USUARIO_VALIDO = re.compile(r"[A-Za-z0-9_-]{3,30}")
 
@@ -40,9 +43,10 @@ class Autenticacion:
                 "usuario": usuario,
                 "password_hash": password_hash
             }).execute()
+            log.info("Cuenta creada", extra={"usuario": usuario})
             return True, "Usuario registrado exitosamente."
         except Exception as e:
-            print(f"Error al registrar usuario: {e}")
+            log.error("Error al registrar usuario: %s", e, extra={"usuario": usuario})
             return False, "No se pudo registrar el usuario. Intenta de nuevo en unos minutos."
 
     def verificar_login(self, usuario: str, password: str) -> Tuple[bool, str, Optional[str]]:
@@ -57,7 +61,7 @@ class Autenticacion:
         try:
             res = self.supabase.table('usuarios_sistema').select('usuario, password_hash').ilike('usuario', usuario.replace('_', r'\_')).execute()
         except Exception as e:
-            print(f"Error al verificar login: {e}")
+            log.error("Error al verificar login: %s", e, extra={"usuario": usuario})
             return False, "No se pudo conectar con el servidor de autenticación. Intenta de nuevo en unos minutos.", None
 
         # Cuentas antiguas pueden diferir solo en mayusculas: se prueba primero la coincidencia exacta
@@ -65,7 +69,9 @@ class Autenticacion:
         for fila in candidatos:
             if bcrypt.checkpw(password.encode('utf-8'), fila['password_hash'].encode('utf-8')):
                 self.actualizar_actividad(fila['usuario'])
+                log.info("Inicio de sesión correcto", extra={"usuario": fila['usuario']})
                 return True, "Login exitoso.", fila['usuario']
+        log.warning("Intento de inicio de sesión fallido", extra={"usuario": usuario})
         return False, "Usuario o contraseña incorrectos.", None
 
     def actualizar_actividad(self, usuario: str):

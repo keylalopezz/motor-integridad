@@ -2,6 +2,9 @@
 from datetime import datetime, timedelta, timezone
 from typing import Dict, List, Optional
 from .supabase_client import SupabaseClient
+from .registro_logs import obtener_logger
+
+log = obtener_logger("metricas")
 
 ACCIONES = {
     "login": "Inicio de sesión",
@@ -10,6 +13,12 @@ ACCIONES = {
     "regla": "Regla creada",
     "validacion": "Validación pre-escritura",
     "escaneo": "Scan Batch",
+    "logout": "Cierre de sesión",
+    "sesion_expirada": "Sesión expirada",
+    "reporte_pdf": "Reporte PDF",
+    "reporte_excel": "Reporte Excel",
+    "issue_github": "Issue en GitHub",
+    "integracion": "Integración configurada",
 }
 
 
@@ -33,7 +42,8 @@ class MetricasUso:
             self.supabase.table('eventos_uso').insert(
                 {'usuario': self.usuario, 'accion': accion, 'detalle': detalle or {}}).execute()
         except Exception as e:
-            print(f"No se pudo registrar el evento de uso: {type(e).__name__}")
+            log.warning("No se pudo registrar el evento de uso %s: %s", accion, type(e).__name__,
+                        extra={"usuario": self.usuario})
 
     def obtener_eventos(self, dias: int = 30, todos: bool = False) -> Optional[List[Dict]]:
         """Devuelve los eventos de los últimos ``dias``; con ``todos`` incluye a todos los usuarios.
@@ -44,9 +54,22 @@ class MetricasUso:
             return None
         desde = (datetime.now(timezone.utc) - timedelta(days=dias)).isoformat()
         try:
-            consulta = self.supabase.table('eventos_uso').select('usuario, accion, creado_en').gte('creado_en', desde)
+            consulta = self.supabase.table('eventos_uso').select('usuario, accion, detalle, creado_en').gte('creado_en', desde)
             if not todos:
                 consulta = consulta.eq('usuario', self.usuario)
             return consulta.order('creado_en').limit(10000).execute().data or []
         except Exception:
             return None
+
+    def obtener_historial(self, accion: str, limite: int = 20) -> List[Dict]:
+        """Últimos eventos ``accion`` del usuario con su detalle (por ejemplo, el historial de escaneos)."""
+        if not self.supabase or not self.usuario:
+            return []
+        try:
+            return (self.supabase.table('eventos_uso').select('accion, detalle, creado_en')
+                    .eq('usuario', self.usuario).eq('accion', accion)
+                    .order('creado_en', desc=True).limit(limite).execute().data or [])
+        except Exception as e:
+            log.warning("No se pudo leer el historial de %s: %s", accion, type(e).__name__,
+                        extra={"usuario": self.usuario})
+            return []

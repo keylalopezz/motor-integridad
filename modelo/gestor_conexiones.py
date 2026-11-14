@@ -3,6 +3,13 @@
 import json
 from typing import Dict, Optional
 from .supabase_client import SupabaseClient, obtener_config
+from .registro_logs import obtener_logger
+
+log = obtener_logger("conexiones")
+
+# Motores NoSQL que se validan; las integraciones (GitHub) se guardan en la misma tabla, cifradas.
+MOTORES_NOSQL = ("mongodb", "redis", "cassandra")
+INTEGRACIONES = ("github",)
 
 # Las credenciales de los motores se guardan cifradas con Fernet si existe
 # ENCRYPTION_KEY. Las configuraciones antiguas (en texto plano) se siguen leyendo.
@@ -54,7 +61,9 @@ class GestorConexiones:
         # Supabase upsert requires specifying the conflicting columns for composite keys
         response = self.supabase.table('conexiones_motores').upsert(data, on_conflict='usuario,motor').execute()
         from .metricas_uso import MetricasUso
-        MetricasUso(self.usuario).registrar("conexion", {"motor": motor})
+        accion = "integracion" if motor in INTEGRACIONES else "conexion"
+        MetricasUso(self.usuario).registrar(accion, {"motor": motor})
+        log.info("Conexión de %s guardada (cifrada)", motor, extra={"usuario": self.usuario})
         return response.data[0] if response.data else {}
 
     def obtener_conexion(self, motor: str) -> Optional[Dict]:
@@ -67,13 +76,14 @@ class GestorConexiones:
         return None
 
     def motores_configurados(self) -> list:
-        """Lista los motores con conexión guardada."""
+        """Lista los motores NoSQL con conexión guardada (sin las integraciones como GitHub)."""
         if not self.supabase:
             return []
         response = self.supabase.table('conexiones_motores').select('motor').eq('usuario', self.usuario).execute()
-        return [r['motor'] for r in response.data]
+        return [r['motor'] for r in response.data if r['motor'] in MOTORES_NOSQL]
 
     def eliminar_conexion(self, motor: str) -> None:
         """Elimina la conexión guardada de ``motor``."""
         if self.supabase:
             self.supabase.table('conexiones_motores').delete().eq('usuario', self.usuario).eq('motor', motor).execute()
+            log.info("Conexión de %s eliminada", motor, extra={"usuario": self.usuario})
