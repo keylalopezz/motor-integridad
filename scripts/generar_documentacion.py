@@ -88,7 +88,7 @@ def galeria(fuentes):
 
 
 def referencia_api():
-    ejecutar(sys.executable, "-m", "pdoc", "modelo", "controlador", "-o", BUILD / "api", "--docformat", "google")
+    ejecutar(sys.executable, "-m", "pdoc", "modelo", "controlador", "motor_cli", "-o", BUILD / "api", "--docformat", "google")
 
 
 def sitio():

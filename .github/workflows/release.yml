@@ -41,8 +41,8 @@ jobs:
       - name: Empaquetar aplicación
         run: |
           mkdir -p build
-          zip -qr "build/motor-integridad-${VERSION}.zip" vista controlador modelo liquibase infra \
-            requirements.txt supabase_schema.sql .streamlit/config.toml .env.example README_APP.md -x "*__pycache__*"
+          zip -qr "build/motor-integridad-${VERSION}.zip" vista controlador modelo motor_cli ejemplos liquibase infra \
+            requirements.txt pyproject.toml supabase_schema.sql .streamlit/config.toml .env.example README_APP.md -x "*__pycache__*"
           sha256sum build/*.zip > build/SHA256SUMS.txt
       - uses: softprops/action-gh-release@v2
         with:

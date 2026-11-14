@@ -1,0 +1,108 @@
+# Integraciones del Motor de Integridad (reto): CLI + Office (Excel) + GitHub (Issues).
+# - En cada push que cambia la CLI o las integraciones: instala el paquete con pip y prueba los comandos.
+# - Manual (Actions → Integraciones → Run workflow) y semanal: además publica las anomalías como Issue
+#   con el GITHUB_TOKEN del flujo (no requiere configurar secretos).
+# - Si existen los secretos SUPABASE_URL, SUPABASE_KEY, ENCRYPTION_KEY, MOTOR_USUARIO y MOTOR_PASSWORD,
+#   también ejecuta el escaneo real de las bases de datos de esa cuenta.
+name: Integraciones (CLI, Excel y GitHub)
+
+on:
+  push:
+    branches: [main]
+    paths: ["motor_cli/**", "modelo/**", "controlador/**", "ejemplos/**", "pyproject.toml", ".github/workflows/integraciones.yml"]
+  schedule:
+    - cron: "0 13 * * 1"   # lunes 08:00 hora de Perú
+  workflow_dispatch:
+    inputs:
+      crear_issue:
+        description: "Publicar las anomalías como Issue de GitHub"
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  integraciones:
+    name: CLI, reporte Excel e Issue
+    runs-on: ubuntu-latest
+    env:
+      SALIDA: build/integraciones
+      CREAR_ISSUE: ${{ github.event_name == 'schedule' || inputs.crear_issue == true }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar la CLI con pip (pyproject.toml)
+        run: |
+          pip install .
+          motor --version
+          mkdir -p "$SALIDA"
+
+      - name: "CLI · validar registros contra un JSON Schema"
+        run: |
+          motor validar ejemplos/registro_valido.json --esquema ejemplos/esquema_usuario.json
+          # El lote contiene registros inválidos a propósito: la CLI debe terminar con código 1
+          set +e
+          motor validar ejemplos/registros_lote.json --esquema ejemplos/esquema_usuario.json | tee "$SALIDA/validacion.txt"
+          codigo=${PIPESTATUS[0]}
+          set -e
+          [ "$codigo" -eq 1 ] || { echo "::error::Se esperaba el código 1 (registros inválidos) y se obtuvo $codigo"; exit 1; }
+
+      - name: "CLI · escaneo del conjunto de prueba + reporte Excel (Office)"
+        run: |
+          motor demo --excel "$SALIDA/reporte_demo.xlsx" | tee "$SALIDA/demo.txt"
+          motor demo --json > "$SALIDA/demo.json"
+          total=$(python -c "import json; print(len(json.load(open('$SALIDA/demo.json'))['anomalias']))")
+          echo "Anomalías detectadas en el conjunto de prueba: $total (esperadas: 7)"
+          [ "$total" -eq 7 ]
+
+      - name: "GitHub · publicar las anomalías como Issue"
+        if: env.CREAR_ISSUE == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: motor demo --github-issue | tee "$SALIDA/issue.txt"
+
+      - name: "Escaneo real de la cuenta (opcional)"
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          ENCRYPTION_KEY: ${{ secrets.ENCRYPTION_KEY }}
+          MOTOR_USUARIO: ${{ secrets.MOTOR_USUARIO }}
+          MOTOR_PASSWORD: ${{ secrets.MOTOR_PASSWORD }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$MOTOR_USUARIO" ] || [ -z "$MOTOR_PASSWORD" ]; then
+            echo "Omitido: configure los secretos SUPABASE_URL, SUPABASE_KEY, ENCRYPTION_KEY, MOTOR_USUARIO y MOTOR_PASSWORD." | tee "$SALIDA/escaneo.txt"
+            exit 0
+          fi
+          extra=""
+          [ "$CREAR_ISSUE" = "true" ] && extra="--github-issue"
+          motor escanear --excel "$SALIDA/reporte_escaneo.xlsx" $extra | tee "$SALIDA/escaneo.txt"
+
+      - name: Resumen
+        if: always()
+        run: |
+          {
+            echo "# Integraciones del Motor de Integridad"
+            echo
+            echo "| Integración | Evidencia |"
+            echo "|---|---|"
+            echo "| CLI (\`pip install .\` → comando \`motor\`) | $(motor --version 2>/dev/null || echo 'no instalada') · validación y demo ejecutadas |"
+            echo "| Office (Excel) | Artefacto \`reportes-integraciones\` → \`reporte_demo.xlsx\` |"
+            echo "| GitHub (Issues) | $(grep -ho 'https://github.com/[^ ]*/issues/[0-9]*' $SALIDA/issue.txt $SALIDA/escaneo.txt 2>/dev/null | head -2 | tr '\n' ' ' || true) |"
+            echo
+            echo '```text'
+            cat "$SALIDA/demo.txt" 2>/dev/null || true
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: reportes-integraciones
+          path: build/integraciones
