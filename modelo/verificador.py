@@ -1,11 +1,15 @@
 """Escaneo por lotes (Scan Batch) de los datos existentes en los motores."""
 
 import json
-from typing import List, Dict, Any
+import time
+from typing import Any, Callable, Dict, List, Optional
 import jsonschema
 from .motor_reglas import MotorReglas
 from .adaptadores import get_adapter
 from .log_auditoria import LogAuditoria
+from .registro_logs import obtener_logger
+
+log = obtener_logger("verificador")
 
 
 def _clave(valor: Any) -> str:
@@ -20,19 +24,26 @@ def _tiene_valor(registro: Dict, campo: str) -> bool:
 
 class VerificadorBatch:
     """Evalúa todas las reglas del usuario y registra las anomalías encontradas."""
-    def __init__(self, usuario: str):
-        """Crea el verificador para ``usuario``; ``errores`` acumula los fallos de conexión."""
+    def __init__(self, usuario: str, motor_reglas: Any = None, auditoria: Any = None,
+                 fabrica_adaptadores: Optional[Callable[[str, str], Any]] = None):
+        """Crea el verificador para ``usuario``; ``errores`` acumula los fallos de conexión.
+
+        ``motor_reglas``, ``auditoria`` y ``fabrica_adaptadores`` permiten ejecutar el escaneo sobre
+        otras fuentes (por ejemplo, el conjunto de prueba en memoria de ``motor demo``).
+        """
         self.usuario = usuario
-        self.motor_reglas = MotorReglas(usuario)
-        self.auditoria = LogAuditoria(usuario)
+        self.motor_reglas = motor_reglas or MotorReglas(usuario)
+        self.auditoria = auditoria or LogAuditoria(usuario)
+        self._fabrica = fabrica_adaptadores
         self.errores: List[str] = []
+        self.duracion_ms: float = 0.0
         self._adaptadores: Dict[str, Any] = {}
 
     def _adaptador(self, motor: str):
         # Reutiliza una conexion por motor durante todo el escaneo
         """Devuelve (y reutiliza) el adaptador de ``motor``."""
         if motor not in self._adaptadores:
-            self._adaptadores[motor] = get_adapter(motor, self.usuario)
+            self._adaptadores[motor] = (self._fabrica or get_adapter)(motor, self.usuario)
         return self._adaptadores[motor]
 
     def _cerrar_adaptadores(self) -> None:
@@ -46,9 +57,11 @@ class VerificadorBatch:
 
     def ejecutar_verificacion(self) -> List[Dict]:
         """Ejecuta las cuatro clases de reglas, reemplaza las violaciones previas y las devuelve."""
+        inicio = time.perf_counter()
         reglas = self.motor_reglas.obtener_reglas()
         violaciones_detectadas = []
         self.errores = []
+        log.info("Escaneo iniciado con %d regla(s)", len(reglas), extra={"usuario": self.usuario})
         verificadores = {
             'referencial': self._verificar_referencial,
             'consistencia': self._verificar_consistencia,
@@ -67,13 +80,17 @@ class VerificadorBatch:
                 except Exception as e:
                     # Si la regla no se pudo evaluar se conservan sus violaciones anteriores
                     self.errores.append(f"Regla {descripcion}: {type(e).__name__}: {e}")
+                    log.error("No se pudo evaluar la regla %s: %s", descripcion, e, extra={"usuario": self.usuario})
                     continue
                 self.auditoria.limpiar_regla(regla['id'])
                 self.auditoria.registrar_violaciones(violaciones)
                 violaciones_detectadas.extend(violaciones)
         finally:
             self._cerrar_adaptadores()
+            self.duracion_ms = round((time.perf_counter() - inicio) * 1000, 1)
 
+        log.info("Escaneo terminado: %d anomalía(s), %d error(es), %.0f ms", len(violaciones_detectadas),
+                 len(self.errores), self.duracion_ms, extra={"usuario": self.usuario})
         return violaciones_detectadas
 
     def _violacion(self, regla: Dict, motores: str, dato: Dict) -> Dict:
