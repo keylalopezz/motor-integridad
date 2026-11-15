@@ -99,8 +99,9 @@ Cada *push* a `main` dispara dos automatizaciones:
    El resultado se publica en GitHub Pages y queda descargable como artefacto `documentacion-tecnica`
    en la pestaña **Actions**. Para generarlo en local: `python scripts/generar_documentacion.py`.
 
-Los informes del proyecto (Semana 1, FD01 Factibilidad, FD02 Visión, FD03 SRS y FD04 SAD) están en
-`docs/informes/` en formato Word y PDF.
+Los informes del proyecto (Semana 1, FD01 Factibilidad, FD02 Visión, FD03 SRS, FD04 SAD, FD05 Informe Final,
+Diccionario de Datos y Estándar de Programación) están en `docs/informes/` en formato Word y PDF; las
+versiones de la Unidad 1 se conservan en `docs/informes/unidad1/`.
 
 ## Uso del Sistema
 
@@ -131,7 +132,7 @@ motor-integridad/
 ├── supabase_schema.sql # Esquema SQL para inicializar Supabase
 ├── supabase_migracion_seguridad.sql # Activa RLS en proyectos existentes
 ├── tests/              # Pruebas unitarias (pytest)
-├── docs/informes/      # Informes FD01-FD04 y Semana 1 (Word y PDF)
+├── docs/informes/      # Semana 1, FD01-FD05, Diccionario de Datos y Estándar (Word y PDF)
 ├── docs/diagramas/     # Fuentes PlantUML de los diagramas UML
 ├── manual/             # Manual técnico y de usuario (MkDocs)
 ├── scripts/            # Generación automática de la documentación
