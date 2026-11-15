@@ -28,7 +28,7 @@ Archivo: `.github/workflows/documentacion.yml`. Se ejecuta en cada *push* a `mai
 | Pruebas unitarias | pytest | Falla el flujo si alguna prueba no pasa |
 | Diagramas desde el código | pyreverse (pylint) | `classes_MotorIntegridad` y `packages_MotorIntegridad` |
 | Diagramas UML del SRS y SAD | PlantUML + Graphviz | PNG y SVG de `docs/diagramas/*.puml` |
-| Referencia de la API | pdoc | HTML de los paquetes `modelo` y `controlador` |
+| Referencia de la API | pdoc | HTML de los paquetes `modelo`, `controlador` y `motor_cli` |
 | Manual técnico y de usuario | MkDocs Material | Sitio web en `build/site` |
 | Publicación | GitHub Pages / artefacto | Sitio público y ZIP descargable `documentacion-tecnica` |
 

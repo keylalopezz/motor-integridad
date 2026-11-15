@@ -24,9 +24,10 @@ bases de datos NoSQL que no las soportan de forma nativa: **MongoDB**, **Redis**
 | [Integraciones y CLI](integraciones.md) | CLI `motor`, reporte Excel (Office), Issues de GitHub, sesiones, caché, logs y telemetría |
 | [Manual de usuario](usuario.md) | Uso de cada módulo de la aplicación |
 | [Diagramas](diagramas.md) | Diagramas UML del SRS y del SAD, y los extraídos del código |
-| [Referencia del código](api/index.html) | Clases y funciones de `modelo` y `controlador` |
+| [Referencia del código](api/index.html) | Clases, métodos y propiedades de `modelo` (incluidos adaptadores e integraciones), `controlador` y `motor_cli` |
 
 ## Informes del proyecto
 
-Los informes de la Semana 1, FD01 (Factibilidad), FD02 (Visión), FD03 (SRS) y FD04 (SAD) se encuentran en la
-carpeta `docs/informes/` del repositorio, en formato Word y PDF.
+Los informes de la Semana 1, FD01 (Factibilidad), FD02 (Visión), FD03 (SRS), FD04 (SAD), FD05 (Informe Final),
+el Diccionario de Datos y el Estándar de Programación se encuentran en la carpeta `docs/informes/` del
+repositorio, en formato Word y PDF. Las versiones de la Unidad 1 se conservan en `docs/informes/unidad1/`.
