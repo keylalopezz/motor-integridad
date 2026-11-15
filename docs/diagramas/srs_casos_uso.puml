@@ -9,6 +9,8 @@ actor "Administrador\nde BD" as A
 actor "Analista de calidad\nde datos" as Q
 actor "Desarrollador" as Dv
 actor "Auditor interno" as Au
+actor "GitHub Actions\n<<sistema>>" as GA
+actor "GitHub\n(API REST)\n<<sistema>>" as GH
 A -up-|> U
 Q -up-|> U
 Dv -up-|> U
@@ -27,20 +29,42 @@ rectangle "Motor de Integridad Multibase NoSQL" {
   usecase "CU11 Generar reporte\nde anomalías" as CU11
   usecase "CU12 Exportar reporte PDF" as CU12
   usecase "CU13 Ver usuarios en línea" as CU13
+  usecase "CU14 Exportar reporte\na Excel" as CU14
+  usecase "CU15 Publicar anomalías\ncomo Issue de GitHub" as CU15
+  usecase "CU16 Configurar integración\ncon GitHub" as CU16
+  usecase "CU17 Operar el motor\ndesde la CLI" as CU17
+  usecase "CU18 Consultar historial\nde escaneos" as CU18
+  usecase "CU19 Consultar logs\nde actividad" as CU19
 }
 V --> CU01
 V --> CU02
 U --> CU03
 U --> CU10
 U --> CU13
+U --> CU18
+U --> CU19
 A --> CU04
 A --> CU07
 A --> CU09
+A --> CU16
 Q --> CU05
 Q --> CU07
 Q --> CU11
+Q --> CU14
 Dv --> CU06
+Dv --> CU17
 Au --> CU11
+GA --> CU17
 CU07 ..> CU08 : <<include>>
 CU12 ..> CU11 : <<extend>>
+CU14 ..> CU11 : <<extend>>
+CU15 ..> CU11 : <<extend>>
+CU15 ..> CU16 : <<include>>
+CU17 ..> CU06 : <<include>>
+CU17 ..> CU07 : <<include>>
+CU15 --> GH
+note bottom of CU03
+  La sesión también se cierra
+  sola tras 30 min sin actividad.
+end note
 @enduml

@@ -3,30 +3,46 @@
 !pragma layout smetana
 skinparam linetype ortho
 component "Interfaz web\n[Streamlit]" as UI
+component "CLI motor\n[argparse]" as CLI
+component "Caché de consultas\n[st.cache_data, 60 s]" as CAC
 component "Controladores" as CT
-component "Servicio de autenticación" as AU
+component "Servicio de autenticación\n(sesión 30 min)" as AU
 component "Motor de reglas" as MR
 component "Validador previo" as VA
 component "Verificador por lotes" as VB
 component "Registro de auditoría" as LA
+component "Registro de logs\n[logging]" as LOG
+component "Telemetría de uso" as TEL
 component "Gestor de conexiones" as GC
 component "Generador de reportes\n[fpdf2]" as PDF
+component "Exportador Excel\n[openpyxl]" as XLS
+component "Integración GitHub\n[urllib · API REST]" as GHI
 interface "IAdaptador" as IA
 component "MongoAdapter\n[pymongo]" as MA
 component "RedisAdapter\n[redis-py]" as RA
 component "CassandraAdapter\n[cassandra-driver]" as CA
+component "MemoriaAdapter\n(demo)" as MEM
 interface "API REST\nSupabase" as ISB
+cloud "GitHub\n(API REST)" as IGH
 database "Supabase\n(PostgreSQL)" as SB
 database "MongoDB Atlas" as MDB
 database "Upstash Redis" as RDB
 database "DataStax Astra" as CDB
-UI --> CT
+UI --> CAC
+CAC --> CT
 UI --> PDF
+UI --> XLS
+UI --> GHI
+CLI --> CT
+CLI --> XLS
+CLI --> GHI
 CT --> AU
 CT --> MR
 CT --> VA
 CT --> VB
 CT --> LA
+CT --> TEL
+CT ..> LOG
 VA --> MR
 VB --> MR
 VB --> LA
@@ -35,14 +51,18 @@ VB --> IA
 IA <|.. MA
 IA <|.. RA
 IA <|.. CA
+IA <|.. MEM
 MA ..> GC : credenciales
 RA ..> GC
 CA ..> GC
+GHI ..> GC : token cifrado
 AU --> ISB
 MR --> ISB
 LA --> ISB
 GC --> ISB
+TEL --> ISB
 ISB - SB
+GHI --> IGH : HTTPS
 MA --> MDB : TLS
 RA --> RDB : TLS
 CA --> CDB : TLS

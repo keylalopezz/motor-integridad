@@ -3,7 +3,7 @@
 !pragma layout smetana
 left to right direction
 package "Motor de Integridad Multibase NoSQL" {
-  package "Seguridad y acceso" as P1 {
+  package "Seguridad y acceso\n(sesiones con expiración)" as P1 {
   }
   package "Gestión de conexiones" as P2 {
   }
@@ -17,9 +17,17 @@ package "Motor de Integridad Multibase NoSQL" {
   }
   package "Auditoría y reportes" as P5 {
   }
-  package "Monitoreo" as P6 {
+  package "Monitoreo\n(historial, logs, telemetría)" as P6 {
   }
   package "Comunidad" as P7 {
+  }
+  package "Integraciones" as P8 {
+    package "CLI motor" as P81 {
+    }
+    package "Excel" as P82 {
+    }
+    package "GitHub Issues" as P83 {
+    }
   }
 }
 P2 ..> P1 : <<usa>>
@@ -29,4 +37,7 @@ P4 ..> P2 : <<usa>>
 P4 ..> P5 : <<usa>>
 P6 ..> P2 : <<usa>>
 P7 ..> P1 : <<usa>>
+P8 ..> P4 : <<usa>>
+P8 ..> P5 : <<usa>>
+P8 ..> P2 : <<usa>>
 @enduml

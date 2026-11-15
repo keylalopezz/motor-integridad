@@ -6,6 +6,7 @@ package "motor-integridad" {
   package "vista" {
     file "app.py" as app
     file "login.py" as login
+    file "cache.py" as cache
     package "rutas" {
       file "0_Conexiones.py"
       file "1_Reglas.py"
@@ -15,6 +16,10 @@ package "motor-integridad" {
       file "5_Monitor.py"
       file "6_Reportes.py"
     }
+  }
+  package "motor_cli" {
+    file "main.py" as climain
+    file "__main__.py"
   }
   package "controlador" {
     file "controlador_auth.py"
@@ -30,22 +35,45 @@ package "motor-integridad" {
     file "validador.py"
     file "verificador.py"
     file "log_auditoria.py"
+    file "metricas_uso.py"
+    file "registro_logs.py"
+    file "descripcion_anomalias.py"
     package "adaptadores" {
       file "base.py"
       file "mongo_adapter.py"
       file "redis_adapter.py"
       file "cassandra_adapter.py"
+      file "memoria_adapter.py"
     }
+    package "integraciones" {
+      file "excel.py"
+      file "github_issues.py"
+    }
+  }
+  package "scripts" {
+    file "mantener_activo.py"
+    file "generar_readme.py"
+    file "respaldo.py"
   }
   package "tests" {
     file "test_autenticacion.py"
     file "test_verificador.py"
     file "test_redis_adapter.py"
+    file "test_cli.py"
+    file "test_integraciones.py"
+    file "test_registro_logs.py"
+    file "test_vista.py"
+    file "test_mantener_activo.py"
   }
+  file "pyproject.toml"
   file "requirements.txt"
   file "supabase_schema.sql"
 }
 vista ..> controlador : <<importa>>
+motor_cli ..> controlador : <<importa>>
+motor_cli ..> integraciones : <<importa>>
+vista ..> integraciones : <<importa>>
 controlador ..> modelo : <<importa>>
 tests ..> modelo : <<prueba>>
+tests ..> motor_cli : <<prueba>>
 @enduml

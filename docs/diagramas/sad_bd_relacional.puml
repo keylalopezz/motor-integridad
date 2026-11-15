@@ -42,10 +42,20 @@ entity "conexiones_motores" as c {
   * config : jsonb (cifrado)
   actualizado_en : timestamptz
 }
+entity "eventos_uso" as e {
+  * id : bigint <<PK>>
+  --
+  usuario : text <<FK>>
+  * accion : text
+  detalle : jsonb (duración, origen web/cli)
+  creado_en : timestamptz <<índice>>
+}
 us ||--o{ r : define
 us ||--o{ a : audita
 r ||--o{ a : genera
 us ||--o{ c : configura
+us ||--o{ e : registra
 note bottom of a : ON DELETE CASCADE desde reglas;\níndice (usuario, regla_id)
-note bottom of c : RLS activado en las cuatro tablas
+note bottom of c : RLS activado en las cinco tablas;\nmotor = mongodb · redis · cassandra · github
+note bottom of e : Telemetría: login, logout, sesión expirada,\nescaneos, validaciones, reportes PDF/Excel e Issues
 @enduml

@@ -7,12 +7,14 @@ actor "Administrador de BD" as A
 actor "Analista de calidad" as Q
 actor "Desarrollador" as Dv
 actor "Auditor interno" as Au
+actor "GitHub Actions\n<<sistema>>" as GA
+actor "GitHub (API REST)\n<<sistema>>" as GH
 A -up-|> U
 Q -up-|> U
 Dv -up-|> U
 Au -up-|> U
 package "Subsistema de Seguridad" {
-  usecase "CU02 Iniciar sesión" as CU02
+  usecase "CU02 Iniciar sesión\n(expira a los 30 min)" as CU02
   usecase "CU04 Gestionar conexiones\n(cifrado Fernet)" as CU04
 }
 package "Subsistema de Reglas" {
@@ -27,14 +29,33 @@ package "Subsistema de Observabilidad" {
   usecase "CU09 Monitorear motores" as CU09
   usecase "CU10 Consultar dashboard" as CU10
   usecase "CU11 Generar reporte" as CU11
+  usecase "CU18 Consultar historial\nde escaneos" as CU18
+  usecase "CU19 Consultar logs\nde actividad" as CU19
+}
+package "Subsistema de Integraciones" {
+  usecase "CU14 Exportar a Excel" as CU14
+  usecase "CU15 Publicar Issue\nen GitHub" as CU15
+  usecase "CU16 Configurar\nintegración GitHub" as CU16
+  usecase "CU17 Operar desde la CLI" as CU17
 }
 U --> CU02
+U --> CU18
+U --> CU19
 A --> CU04
 A --> CU09
+A --> CU16
 Q --> CU05
 Q --> CU07
+Q --> CU14
 Dv --> CU06
+Dv --> CU17
+GA --> CU17
 Au --> CU10
 Au --> CU11
 CU07 ..> CU08 : <<include>>
+CU14 ..> CU11 : <<extend>>
+CU15 ..> CU11 : <<extend>>
+CU15 ..> CU16 : <<include>>
+CU17 ..> CU07 : <<include>>
+CU15 --> GH
 @enduml

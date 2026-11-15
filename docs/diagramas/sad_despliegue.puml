@@ -4,19 +4,26 @@
 skinparam linetype ortho
 node "Equipo del usuario" as PC {
   artifact "Navegador web\n(Chrome / Edge / Firefox)" as NAV
+  artifact "CLI motor\n(pip install .)" as CLI
 }
 cloud "GitHub" as GH {
   artifact "Repositorio\nkeylalopezz/motor-integridad" as REPO
+  node "GitHub Actions" as GA {
+    artifact "integraciones.yml\n(CLI → Issue)" as WFI
+    artifact "mantener-activo.yml\n(cada 4 h)" as WFM
+  }
+  artifact "API REST\n(Issues)" as GHAPI
 }
 node "Streamlit Community Cloud" as SCC <<PaaS>> {
   node "Contenedor Linux · Python 3.12" as CONT {
     artifact "vista/app.py\n(Streamlit)" as APP
-    artifact "controlador/ y modelo/" as LOG
+    artifact "controlador/ y modelo/\n(+ integraciones)" as LOG
     artifact "Secrets\nSUPABASE_URL · SUPABASE_KEY\nENCRYPTION_KEY" as SEC
+    artifact "logs/motor.log\n(rotativo)" as LF
   }
 }
 node "Supabase (AWS)" as SUP <<DBaaS>> {
-  database "PostgreSQL\nusuarios · reglas\nauditoría · conexiones" as PG
+  database "PostgreSQL\nusuarios · reglas · auditoría\nconexiones · eventos_uso" as PG
 }
 node "MongoDB Atlas" as ATL <<DBaaS>> {
   database "Clúster M0\nbase tienda" as MDB
@@ -33,4 +40,11 @@ APP --> PG : HTTPS (API REST)
 APP --> MDB : TLS · mongodb+srv
 APP --> RDB : TLS · rediss://
 APP --> CDB : TLS · Secure Connect Bundle
+APP --> GHAPI : HTTPS · token cifrado
+CLI --> PG : HTTPS (API REST)
+CLI --> GHAPI : HTTPS
+WFI --> GHAPI : GITHUB_TOKEN
+WFI --> PG
+WFM --> SUP : ping
+WFM --> APP : ping
 @enduml
