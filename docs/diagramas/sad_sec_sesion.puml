@@ -1,0 +1,32 @@
+@startuml
+!include estilo.iuml
+title Secuencia: control de sesión con expiración por inactividad
+actor "Usuario" as U
+participant "vista/app.py" as APP
+participant "login.py" as LG
+participant "controlador_auth" as AU
+participant "registro_logs" as LOG
+database "Supabase" as SB
+
+U -> LG : usuario y contraseña
+LG -> AU : iniciar_sesion()
+AU -> SB : validar (bcrypt)
+SB --> AU : ok
+AU -> LOG : info «login»
+AU --> LG : sesión creada
+LG -> APP : guardar ultima_actividad = ahora
+loop cada interacción
+  U -> APP : acción en cualquier página
+  alt ahora - ultima_actividad <= SESION_MINUTOS (30)
+    APP -> APP : ultima_actividad = ahora
+    APP --> U : página solicitada
+  else inactividad mayor a 30 min
+    APP -> LOG : info «sesión expirada»
+    APP -> AU : cerrar_sesion()
+    APP --> U : vuelve al login con aviso
+  end
+end
+U -> APP : «Cerrar sesión»
+APP -> AU : cerrar_sesion()
+AU -> LOG : info «logout»
+@enduml

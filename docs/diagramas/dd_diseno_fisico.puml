@@ -1,0 +1,70 @@
+@startuml
+!include estilo.iuml
+!pragma layout smetana
+hide circle
+skinparam linetype ortho
+title Diseño físico del plano de control (Supabase · PostgreSQL)
+
+entity "usuarios_sistema" as us {
+  * id : uuid <<PK>> = gen_random_uuid()
+  --
+  * usuario : text <<UNIQUE>> <<NOT NULL>>
+  * password_hash : text <<NOT NULL>>
+  creado_en : timestamptz = now()
+  ultimo_acceso : timestamptz = now()
+  ..
+  RLS activado
+}
+entity "reglas" as r {
+  * id : uuid <<PK>> = gen_random_uuid()
+  --
+  usuario : text <<FK>> ON DELETE CASCADE
+  * tipo : text <<CHECK>> esquema | unicidad | referencial | consistencia
+  * motor_origen : text
+  * coleccion_origen : text
+  * campo : text
+  motor_destino : text
+  coleccion_destino : text
+  campo_destino : text
+  schema : jsonb
+  creado_en : timestamptz = now()
+  ..
+  idx_reglas_usuario (usuario) · RLS activado
+}
+entity "auditoria_violaciones" as a {
+  * id : uuid <<PK>> = gen_random_uuid()
+  --
+  usuario : text <<FK>> ON DELETE CASCADE
+  regla_id : uuid <<FK>> ON DELETE CASCADE
+  * tipo : text
+  * motores_involucrados : text
+  dato_afectado : jsonb
+  detectado_en : timestamptz = now()
+  ..
+  idx_auditoria_usuario_regla (usuario, regla_id) · RLS activado
+}
+entity "conexiones_motores" as c {
+  * usuario : text <<PK>> <<FK>> ON DELETE CASCADE
+  * motor : text <<PK>>
+  --
+  * config : jsonb (cifrado con Fernet)
+  actualizado_en : timestamptz = now()
+  ..
+  RLS activado
+}
+entity "eventos_uso" as e {
+  * id : bigint <<PK>> GENERATED ALWAYS AS IDENTITY
+  --
+  usuario : text <<FK>> ON DELETE CASCADE
+  * accion : text
+  detalle : jsonb = '{}'
+  creado_en : timestamptz = now()
+  ..
+  idx_eventos_uso_fecha (creado_en) · RLS activado
+}
+us ||--o{ r : "usuario"
+us ||--o{ a : "usuario"
+r ||--o{ a : "regla_id"
+us ||--o{ c : "usuario"
+us ||--o{ e : "usuario"
+@enduml

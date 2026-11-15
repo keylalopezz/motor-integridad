@@ -1,0 +1,34 @@
+@startgantt
+skinparam defaultFontName Arial
+skinparam defaultFontSize 12
+language es
+printscale weekly
+Project starts 2026-08-10
+<style>
+ganttDiagram {
+  task { BackGroundColor #ECE9FB; LineColor #4B3F9E }
+  milestone { BackGroundColor #C47F17; LineColor #C47F17 }
+  separator { FontStyle bold; LineColor #9A93C9 }
+}
+</style>
+
+-- Inicio --
+[Levantamiento de información con CloudNexus] as [T1] lasts 14 days
+[Propuesta, Visión y Factibilidad (FD01, FD02)] as [T2] starts at [T1]'s end and lasts 7 days
+
+-- Elaboración --
+[Especificación de requerimientos (FD03 SRS)] as [T3] starts at [T2]'s end and lasts 10 days
+[Arquitectura de software (FD04 SAD)] as [T4] starts 2026-09-07 and lasts 11 days
+
+-- Construcción --
+[Iteración 1: autenticación y conexiones] as [I1] starts at [T4]'s end and lasts 14 days
+[Entrega Unidad 1] happens 2026-10-01
+[Iteración 2: reglas, validación, escaneo y auditoría] as [I2] starts at [I1]'s end and lasts 14 days
+[Iteración 3: dashboard, reportes, monitor y comunidad] as [I3] starts at [I2]'s end and lasts 14 days
+[Iteración 4: integraciones (CLI, Excel, GitHub) y no funcionales] as [I4] starts at [I3]'s end and lasts 14 days
+[Entrega Unidad 2] happens 2026-11-14
+
+-- Transición --
+[Despliegue, pruebas de aceptación y documentación final] as [T5] starts at [I4]'s end and lasts 7 days
+[Capacitación y entrega a CloudNexus] as [T6] starts at [T5]'s end and lasts 7 days
+@endgantt

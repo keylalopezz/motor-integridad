@@ -1,0 +1,98 @@
+@startuml
+!include estilo.iuml
+!pragma layout smetana
+left to right direction
+title Clases y módulos agregados en la Unidad 2
+
+package "modelo.adaptadores" {
+  abstract class Adaptador {
+    + existe(coleccion, campo, valor) : bool
+    + obtener(coleccion, id) : dict
+    + contar_duplicados(coleccion, campo) : int
+    + obtener_todos(coleccion) : list
+    + verificar_salud() : bool
+    + listar_recursos() : list
+    + obtener_muestra(coleccion) : list
+  }
+  class MemoriaAdapter {
+    - datos : dict
+    + existe() ...
+    + obtener_todos() ...
+  }
+  Adaptador <|-- MemoriaAdapter
+}
+
+package "modelo.integraciones" {
+  class IntegracionGitHub {
+    - token : str
+    - repo : str
+    - _peticion(metodo, ruta, cuerpo) : dict
+    + verificar() : dict
+    + crear_issue(titulo, cuerpo, etiquetas) : dict
+  }
+  class ErrorGitHub <<Exception>> {
+    + codigo : int
+  }
+  class "github_issues" as GHM <<módulo>> {
+    + construir_issue(violaciones, errores, usuario) : tuple
+    + configuracion_github(usuario) : dict
+    + publicar_anomalias(violaciones, ...) : dict
+  }
+  class "excel" as XLM <<módulo>> {
+    + generar_excel(violaciones, usuario, origen) : bytes
+    + guardar_excel(ruta, violaciones) : str
+    - _hoja_resumen()
+    - _hoja_detalle()
+  }
+  GHM ..> IntegracionGitHub : usa
+  IntegracionGitHub ..> ErrorGitHub : lanza
+}
+
+package "modelo" {
+  class BuferMemoria {
+    - registros : deque
+    + emit(registro)
+  }
+  class "registro_logs" as RLM <<módulo>> {
+    + configurar_logs() : Logger
+    + obtener_logger(nombre) : Logger
+    + registros_recientes(usuario, limite) : list
+  }
+  class "descripcion_anomalias" as DAM <<módulo>> {
+    + describir(violacion) : dict
+    + resumen_por_tipo(violaciones) : dict
+  }
+  RLM *-- BuferMemoria
+}
+
+package "motor_cli" {
+  class "main" as CLIM <<módulo>> {
+    + crear_parser() : ArgumentParser
+    + main(argv) : int
+    + cmd_validar(args) : int
+    + cmd_reglas(args) : int
+    + cmd_escanear(args) : int
+    + cmd_reporte(args) : int
+    + cmd_demo(args) : int
+  }
+  class ErrorCLI <<Exception>>
+  CLIM ..> ErrorCLI
+}
+
+package "vista" {
+  class "cache" as CAM <<módulo>> {
+    + reglas(usuario) : list
+    + violaciones(usuario) : list
+    + historial(usuario, accion) : list
+    + invalidar()
+  }
+}
+
+CLIM ..> XLM : --excel
+CLIM ..> GHM : --github-issue
+CLIM ..> MemoriaAdapter : demo
+CLIM ..> DAM
+XLM ..> DAM
+GHM ..> DAM
+CLIM ..> RLM
+@enduml

@@ -1,0 +1,31 @@
+@startuml
+!include estilo.iuml
+title Actividad: automatizaciones de GitHub Actions agregadas en la Unidad 2
+|GitHub Actions|
+start
+fork
+  :Push a main, lunes 08:00\no ejecución manual\n(integraciones.yml);
+  :Instalar la CLI con pip\n(pyproject.toml → comando motor);
+  :motor validar contra\nJSON Schema de ejemplo;
+  :motor demo --excel\n(7 violaciones de referencia);
+  |API GitHub|
+  :motor demo --github-issue\n→ crear Issue con las anomalías;
+  |GitHub Actions|
+  if (¿Hay secretos MOTOR_USUARIO\ny MOTOR_PASSWORD?) then (sí)
+    :motor escanear --excel\n(escaneo real de la cuenta);
+  else (no)
+  endif
+  :Resumen en la ejecución y\nartefacto reportes-integraciones;
+fork again
+  :Cada 4 horas\n(mantener-activo.yml);
+  :python scripts/mantener_activo.py;
+  |Servicios|
+  :Consultar Supabase, MongoDB,\nRedis, Cassandra y la app;
+  |GitHub Actions|
+  if (¿Algún servicio falló?) then (sí)
+    :Marcar el job en rojo\ncon el detalle;
+  else (no)
+  endif
+end fork
+stop
+@enduml

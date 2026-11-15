@@ -1,0 +1,36 @@
+@startuml
+!include estilo.iuml
+skinparam maxMessageSize 140
+title Secuencia: escaneo desde la CLI con salida a Excel y GitHub Issues
+actor "Desarrollador /\nGitHub Actions" as D
+participant "motor_cli\n(main)" as CLI
+participant "Controladores\n(auth · verificación)" as CT
+participant "Verificador +\nadaptadores" as VB
+participant "integraciones\n.excel" as XLS
+participant "integraciones\n.github_issues" as GHI
+database "Supabase" as SB
+participant "API REST\nGitHub" as GH
+
+D -> CLI : motor escanear --excel informe.xlsx --github-issue --repo dueño/repo
+CLI -> CT : iniciar_sesion(MOTOR_USUARIO, MOTOR_PASSWORD)
+CT -> SB : verificar credenciales
+SB --> CT : usuario válido
+CLI -> CT : escanear(usuario)
+CT -> VB : verificar reglas activas en MongoDB, Redis y Cassandra
+VB --> CT : violaciones
+CT -> SB : registrar en auditoria_violaciones
+CT --> CLI : violaciones y errores
+CLI -> CLI : tabla en consola (o JSON con --json)
+opt opción excel
+  CLI -> XLS : guardar_excel(ruta, violaciones)
+  XLS --> CLI : informe.xlsx (Resumen y Anomalías)
+end
+opt opción github-issue
+  CLI -> GHI : publicar_anomalias(violaciones, repo)
+  GHI -> GH : POST /repos/{repo}/issues (GITHUB_TOKEN)
+  GH --> GHI : 201 Created
+  GHI --> CLI : url del Issue
+end
+CLI -> SB : telemetría en eventos_uso (origen cli, duración)
+CLI --> D : código de salida (distinto de cero con --estricto y anomalías)
+@enduml

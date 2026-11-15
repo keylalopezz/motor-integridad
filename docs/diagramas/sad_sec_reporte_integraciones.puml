@@ -1,0 +1,37 @@
+@startuml
+!include estilo.iuml
+skinparam maxMessageSize 150
+title Secuencia: exportar a Excel y crear Issue desde la página Reportes
+actor "Analista de\ncalidad" as U
+participant "6_Reportes.py\n(Streamlit)" as UI
+participant "vista.cache +\ncontrolador_reporte" as CR
+participant "integraciones\n.excel" as XLS
+participant "integraciones\n.github_issues" as GHI
+database "Supabase" as SB
+participant "API REST\nGitHub" as GH
+
+U -> UI : abrir Reportes
+UI -> CR : violaciones(usuario)
+alt caché vencida (más de 60 s)
+  CR -> SB : SELECT auditoria_violaciones
+  SB --> CR : filas
+end
+CR --> UI : violaciones
+U -> UI : clic «Descargar Excel»
+UI -> XLS : generar_excel(violaciones, usuario)
+XLS --> UI : bytes .xlsx
+UI --> U : descarga del archivo
+U -> UI : clic «Crear Issue en GitHub»
+UI -> GHI : configuracion_github(usuario)
+GHI -> SB : leer integración «github» en conexiones_motores
+SB --> GHI : token y repo cifrados (se descifran con Fernet)
+alt integración configurada
+  GHI -> GH : POST /repos/{repo}/issues
+  GH --> GHI : 201 Created
+  GHI --> UI : enlace al Issue
+  UI --> U : mensaje de éxito con enlace
+else sin token o sin permisos
+  GHI --> UI : ErrorGitHub con mensaje claro
+  UI --> U : aviso: configurar en Bases de Datos → GitHub
+end
+@enduml
