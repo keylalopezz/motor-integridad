@@ -74,8 +74,15 @@ def respaldar_motores(cliente, zf, filas):
 
 
 def escribir_reporte(filas, archivo, tamano, sha, duracion) -> bool:
-    """Genera ``reporte_respaldo.md``, lo agrega al resumen de GitHub Actions e indica si todo salió bien."""
+    """Genera ``reporte_respaldo.md``, lo agrega al resumen de GitHub Actions e indica si el respaldo es válido.
+
+    El respaldo es válido si se copiaron todas las tablas del plano de control (Supabase). Una conexión de un
+    usuario a su propio motor que no responde (credenciales vencidas o servicio pausado) no invalida el
+    respaldo: se registra como advertencia y se respalda el resto.
+    """
     ok = sum(1 for f in filas if f[3] == "OK")
+    fallos_control = [f for f in filas if f[0] == "Supabase" and f[3] != "OK"]
+    fallos_motores = [f for f in filas if f[0] != "Supabase" and f[3] != "OK"]
     lineas = [
         "# Reporte de copia de seguridad", "",
         f"- Fecha: {datetime.now(timezone.utc):%Y-%m-%d %H:%M} UTC",
@@ -85,6 +92,11 @@ def escribir_reporte(filas, archivo, tamano, sha, duracion) -> bool:
         "", "| Origen | Recurso | Registros | Estado | Tiempo (s) |", "|---|---|---:|---|---:|",
     ]
     lineas += [f"| {o} | {r} | {n} | {e} | {t:.2f} |" for o, r, n, e, t in filas]
+    if fallos_motores:
+        lineas += ["", f"Advertencia: {len(fallos_motores)} conexión(es) de usuarios no respondieron "
+                   "(credenciales vencidas o servicio pausado); se respaldó el resto de los datos."]
+        for origen, _, _, estado, _ in fallos_motores:
+            print(f"::warning::Respaldo parcial de {origen}: {estado}")
     lineas += ["", "Restauración: descargar el artefacto y ejecutar "
                "`python scripts/respaldo.py --descifrar <archivo>.zip.enc` con la misma ENCRYPTION_KEY."]
     texto = "\n".join(lineas) + "\n"
@@ -94,7 +106,7 @@ def escribir_reporte(filas, archivo, tamano, sha, duracion) -> bool:
         with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as f:
             f.write(texto)
     print(texto)
-    return ok == len(filas)
+    return not fallos_control
 
 
 def main() -> int:
